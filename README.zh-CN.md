@@ -13,6 +13,8 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 | **OCR 写回**可搜索 PDF 文件 | ✅ | ❌ 只读出 | ❌ 无 OCR | ❌ 只读出 | ☁️ 收费 |
 | **解锁加密件**（user 密码） | ✅ | ❌ 硬失败 | ⚠️ 仅 owner 密码 | ❌ 硬失败 | ☁️ 收费 |
 | 拆分 / 合并 / 旋转 | ✅ | ❌ | ✅ | ❌ | ☁️ 收费 |
+| **压缩**到目标大小 | ✅ | ❌ | ❌ | ❌ | ☁️ 收费 |
+| 渲染页面给视觉模型 | ✅ | ✅ | ✅ | ✅ | ☁️ |
 | 100% 本地隐私 | ✅ | ✅ | ✅ | ✅ | ❌ |
 
 直击的痛点：
@@ -81,6 +83,70 @@ Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，
 
 **错误契约**（agent 自路由）：失败统一返回 `{"ok": false, "error": "<code>"}`——`missing_dependency`（带各平台 `install`）、`encrypted_pdf`（提示先 `unlock_pdf`）、`wrong_password`、`output_exists`（需显式 overwrite）、`invalid_page_range` 等。
 
+## 使用示例
+
+在 MCP 客户端里直接描述目标即可——agent 会自己串工具，错误契约让它能自路由（比如遇到 `encrypted_pdf` 就先调 `unlock_pdf`）。脱离 MCP 使用时，先定义一次：
+
+```bash
+PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
+# PyPI 包发布后可简化为 "uvx --from pdf-toolbox-mcp pdftoolbox"
+```
+
+**1 · 扫描件 → 可搜索 PDF**（招牌能力）
+
+> “`contract-scan.pdf` 是扫描的合同，没法搜索。帮我做成可搜索的，主要是中文夹少量英文。”
+
+Agent：`pdf_info` → `is_searchable` 判定文本密度低 → `ocr_pdf(path, lang="chi_sim+eng")` 产出 `contract-scan_ocr.pdf`——之后文本提取、阅读器里 Ctrl+F 都可用。
+
+```bash
+$PTX ocr contract-scan.pdf --lang chi_sim+eng
+$PTX text contract-scan_ocr.pdf --pages 1-3
+```
+
+**2 · 加密 PDF → 可读**
+
+> “`locked.pdf` 加了密，密码是 `hunter2`。解开，然后总结第 3 页。”
+
+Agent：`unlock_pdf(path, password="hunter2")` → `locked_unlocked.pdf` → `extract_text(pages="3")`。
+
+```bash
+$PTX unlock locked.pdf --password 'hunter2'
+$PTX text locked_unlocked.pdf --pages 3
+```
+
+**3 · 对外分享前涂掉敏感信息**
+
+> “把 `draft.pdf` 里所有 `张三` 和合同号 `HT-2026-088` 涂黑——要求物理上不可恢复。”
+
+Agent：`redact_text(queries=["张三", "HT-2026-088"])` → `draft_redacted.pdf`。命中的页被光栅化，文字从像素*和*文本层双删除；其余页保留可选中文字。验证：对产物跑 `extract_text`，应为零命中。
+
+```bash
+$PTX redact-text draft.pdf --query 张三 --query HT-2026-088
+```
+
+**4 · 合并 + 加密分发**
+
+> “把 `cover.pdf` 和 `report.pdf` 合并成 `annual.pdf`，再加密码 `k3y`：能打开、能打印，但不能修改。”
+
+Agent：`merge_pdfs(paths=["cover.pdf", "report.pdf"], output="annual.pdf")` → `protect_pdf(user_password="k3y")`（默认可打印可复制、不可修改）→ `annual_locked.pdf`。
+
+```bash
+$PTX merge cover.pdf report.pdf --output annual.pdf
+$PTX protect annual.pdf --user-password 'k3y'
+```
+
+**5 · 压到邮件附件上限内**
+
+> “`big.pdf` 有 38 MB，邮箱限 10 MB，帮我压下去。”
+
+Agent：`compress_pdf(path, target_mb=10)` 沿质量阶梯（ebook → screen）下探直到达标 → `big_compressed.pdf`。
+
+```bash
+$PTX compress big.pdf --target-mb 10
+```
+
+更多菜谱——批量 OCR、发布流水线（`sanitize` → `edit_metadata` → `linearize`）、视觉看页、定位+区域涂黑、表单填写、损坏文件抢救——见 [cookbook](docs/cookbook.md)（英文）。
+
 ## 配置
 
 | 环境变量 | 默认 | 含义 |
@@ -93,11 +159,13 @@ Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，
 全部能力也可脱离 MCP 使用：
 
 ```bash
-uvx --from pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
-uvx --from pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
-uvx --from pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
-uvx --from pdf-toolbox-mcp pdftoolbox probe all
+uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
+uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
+uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
+uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox probe all
 ```
+
+*（PyPI 包发布后可去掉 git 前缀，简写为 `uvx --from pdf-toolbox-mcp …`——见快速开始中的说明。）*
 
 ## 安全与隐私
 
@@ -114,11 +182,11 @@ MIT。系统工具以独立进程聚合调用：poppler (GPL-2.0)、qpdf (Apache
 ## 开发
 
 ```bash
-uv sync --dev && uv run pytest    # 60 个测试，按能力级别自动跳过
+uv sync --dev && uv run pytest    # 105 个测试，按能力级别自动跳过
 uv run pdftoolbox probe all
 ```
 
-路线图：压缩到目标大小、脱敏发布（真涂黑）、批处理、表单填写——见 [PLAN.md](PLAN.md)。
+路线图：v0.1.0 已交付上表全部 24 个工具。下一步：PyPI 包（所有命令可去掉 git 前缀）、真实扫描件加固。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
 
 ## 许可证
 

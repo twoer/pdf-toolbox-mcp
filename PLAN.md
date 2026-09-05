@@ -236,7 +236,7 @@ M-1 未通过时，不扩展 P2/P3；优先解决依赖分发、协议返回类�
 | **M1 MVP** | 先做 `pdf_info`、`extract_text`、`ocr_pdf`、`render_pages`，加 CLI 和 MCP 契约测试 | 5–8 天 | 至少两平台 e2e 通过；目标客户端完成三个真实场景 |
 | **M2 发布** | 补齐 P1b 四个 qpdf 工具 ✅；README 打磨 ✅（双语+对比表）、PyPI 发布、6 个目录站提交、教程一篇（草稿 ✅） | 1–2 天 | 8 个 P1 工具全部可用 ✅（实际 9+探测）；uvx 可用（wheel 隔离验证 ✅，PyPI 待发）；awesome PR 被合并 |
 
-> **M2 进度（2026-09-05）**：材料侧全部就绪——双语 README（含竞品对比表与安装矩阵）、教程草稿、目录站提交文案、打包验证（uv build + 隔离环境 uvx + CLI）见 [docs/launch-checklist.md](docs/launch-checklist.md)。剩余三项需仓库所有者：建 GitHub 远程、`uv publish`（需 PyPI token）、目录站提交与教程投放。
+> **M2 进度（2026-09-05）**：材料侧全部就绪——双语 README（含竞品对比表与安装矩阵）、教程草稿、目录站提交文案、打包验证（uv build + 隔离环境 uvx + CLI）——发版清单与教程草稿存于本地 `notes/`（未入库）。剩余三项需仓库所有者：建 GitHub 远程、`uv publish`（需 PyPI token）、目录站提交与教程投放。
 | **M3 深化** | P2 分批实现 ✅（2026-09-05：is_searchable / list_fonts / extract_images / extract_attachments / check_repair+repair / linearize / batch_ocr 逐文件结果+重试+超时，17 工具，77 测试双平台） | 4–7 天 | 50 文件批处理有超时、失败重试和逐文件结果 ✅（2026-09-06 压测：50/50 成功，1.56s/文件，见 m1-record） |
 | **M4 高级** | P3 实现 ✅（2026-09-06：sanitize / redact 真涂黑 / fill_form / edit_metadata / compress_pdf 档位阶梯，22 工具，92 测试双平台） | 5–10 天 | redact 后无法提取被涂内容 ✅（产物纯图像，pdftotext 全空 + 遮块像素级验证），文档明确质量损失和边界 ✅（工具描述与 README 注明"全文档光栅化、无文本层"） |
 
@@ -265,7 +265,7 @@ M-1 未通过时，不扩展 P2/P3；优先解决依赖分发、协议返回类�
 - **终态规模**：24 工具 / 105 测试 / 三平台 CI 全绿 / 双语 README / CHANGELOG / CONTRIBUTING / SECURITY / issue 模板
 - **风险表**：唯一"高风险"项（Windows 安装摩擦）已降级为已缓解
 
-**剩余事项（全部需仓库所有者操作，见 [docs/launch-checklist.md](docs/launch-checklist.md)）**：
+**剩余事项（全部需仓库所有者操作，清单存于本地 `notes/launch-checklist.md`，未入库）**：
 1. PyPI：pypi.org 注册 pending publisher（owner=twoer, repo=pdf-toolbox-mcp, workflow=release.yml）→ `git tag v0.1.0 && git push --tags`
 2. M-1c 真实客户端验收：API 代理恢复后跑 m1-record 留档命令
 3. M-1d 正式版：5–10 份真实脱敏中文样本复核

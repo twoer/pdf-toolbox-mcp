@@ -24,3 +24,7 @@ htmlcov/
 PDF-Toolbox/
 .fixtures/
 .tessdata/
+
+# 本地私有材料（发版清单、教程草稿）与本机工具配置
+notes/
+opencode.json

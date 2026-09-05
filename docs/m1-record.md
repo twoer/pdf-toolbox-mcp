@@ -35,10 +35,10 @@
 - `list`：5 工具（info / extract_text / ocr_pdf / render_pages / dependency_status）✅
 - `call tool_extract_text`：返回结构化 JSON + 标记串 ✅
 
-无头 Claude Code 方案已就绪并注册验证（`✔ Connected`），但本机 Claude Code 的 API 代理对 HTTPS CONNECT 一律重置（中转服务故障：TCP 可达、TLS 复位）——用户侧网络服务问题，非本项目代码问题。**代理恢复后重跑**：
+无头 Claude Code 方案已就绪并注册验证（`✔ Connected`），但本机对外的 HTTPS 链路异常（TCP 可达、TLS 握手被复位）——用户侧网络环境问题，非本项目代码问题。**网络恢复后重跑**：
 
 ```bash
-cd /Users/zhangkun/Documents/Code/my-2026/pdf-toolbox-mcp
+cd <path/to/pdf-toolbox-mcp>
 claude mcp add --scope local pdf-toolbox -- uv run --directory $PWD pdf-toolbox-mcp
 # 场景1：扫描件智能路由→OCR 写回→定位标记串
 claude -p "用 pdf-toolbox 工具处理 .fixtures/scanned.pdf：先判断是否可搜索，不可搜索则 OCR 写回（覆盖输出），在产物中找到 PDF-TOOLBOX-TEST-7734 并报告页码，最后报告调用的工具与顺序" --allowedTools "mcp__pdf-toolbox__*"

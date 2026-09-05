@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versioning is [S
 
 ## [Unreleased] — 0.1.0
 
-First functional build. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf + ghostscript), 22 tools, 94 tests green on macOS / Linux / Windows CI.
+First functional build. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf + ghostscript), 24 tools, 105 tests green on macOS / Linux / Windows CI.
 
 ### Added
 - **Content redaction**: `locate_text` (text → page + bounding boxes via `pdftotext -bbox`, CJK-safe normalized matching) and `redact_text` (redact by keyword — auto-locates every occurrence, no manual coordinates)

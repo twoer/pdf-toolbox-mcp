@@ -204,7 +204,7 @@ def check(
     _echo(check_repair(path, repair=repair, output=output, overwrite=overwrite))
 
 
-@app.command()
+@app.command("linearize")
 def linearize_cmd(
     path: Path,
     output: Path | None = typer.Option(None),
@@ -246,7 +246,7 @@ def locate(
     _echo(locate_text(path, query=query, pages=pages))
 
 
-@app.command()
+@app.command("redact-text")
 def redact_text_cmd(
     path: Path,
     queries: list[str] = typer.Option(..., "--query", help="可多次传入"),
@@ -258,7 +258,7 @@ def redact_text_cmd(
     _echo(redact_text(path, queries=queries, dpi=dpi, output=output, overwrite=overwrite))
 
 
-@app.command()
+@app.command("sanitize")
 def sanitize_cmd(
     path: Path,
     output: Path | None = typer.Option(None),
@@ -270,7 +270,7 @@ def sanitize_cmd(
                    output=output, overwrite=overwrite))
 
 
-@app.command()
+@app.command("redact")
 def redact_cmd(
     path: Path,
     regions: str = typer.Option(..., help='JSON 数组，如 \'[{"page":1,"x":60,"y":100,"w":300,"h":30}]\''),
