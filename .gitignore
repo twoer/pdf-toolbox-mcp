@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.uv/
+
+# 测试与工具
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# 编辑器与系统
+.idea/
+.vscode/
+.DS_Store
+
+# 项目运行产物（默认沙箱目录）
+PDF-Toolbox/
+.fixtures/
+.tessdata/

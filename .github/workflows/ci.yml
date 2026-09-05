@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            install: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf ghostscript tesseract-ocr
+          - os: macos-latest
+            install: brew install poppler qpdf ghostscript tesseract
+          # Windows: choco 预装在 runner 上。tesseract 包较大（~5min），
+          # 换来全量 engine 测试在 Windows 真实运行——验证 gswin64c 别名等平台适配。
+          - os: windows-latest
+            install: choco install -y poppler qpdf ghostscript tesseract
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install system dependencies
+        run: ${{ matrix.install }}
+      - name: Lint (ruff)
+        run: uv run ruff check src tests tools
+      - name: Sync Python dependencies
+        run: uv sync --dev
+      - name: Run tests
+        run: uv run pytest -v
+      - name: Probe report
+        run: uv run pdftoolbox probe all

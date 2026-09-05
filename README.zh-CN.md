@@ -1,0 +1,125 @@
+# pdf-toolbox-mcp
+
+[English](README.md) | 本地优先的 AI 代理 PDF 处理引擎。
+
+**别人帮 AI 读 PDF，我们帮 AI 处理 PDF**——扫描件 OCR 写回真正可搜索的文件、解锁加密 PDF、拆分合并旋转、加密分发。100% 本机运行：无云端调用、不上传文件、不按页收费。
+
+## 为什么又做一个 PDF MCP？
+
+PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调研](docs/competitor-matrix.md)（2026-09）：
+
+| 能力 | **pdf-toolbox** | Citra (916★) | ODA (153★) | jztan (130★) | 云 SaaS |
+|---|:-:|:-:|:-:|:-:|:-:|
+| **OCR 写回**可搜索 PDF 文件 | ✅ | ❌ 只读出 | ❌ 无 OCR | ❌ 只读出 | ☁️ 收费 |
+| **解锁加密件**（user 密码） | ✅ | ❌ 硬失败 | ⚠️ 仅 owner 密码 | ❌ 硬失败 | ☁️ 收费 |
+| 拆分 / 合并 / 旋转 | ✅ | ❌ | ✅ | ❌ | ☁️ 收费 |
+| 100% 本地隐私 | ✅ | ✅ | ✅ | ✅ | ❌ |
+
+直击的痛点：
+
+- Claude 原生**直接拒绝加密 PDF**；ChatGPT 对扫描件报 *"No text could be extracted"*——这里 OCR 会把真正的文本层写回文件，`unlock_pdf` 只用 user（打开）密码即可解锁。
+- Claude Code 按页渲染读 PDF 比本地提取文本**多烧约 30 倍 token**。
+
+## 快速开始
+
+任意 MCP 客户端（Claude Desktop / Claude Code / Cursor…）：
+
+```json
+{
+  "mcpServers": {
+    "pdf-toolbox": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
+    }
+  }
+}
+```
+
+*（PyPI 包 `pdf-toolbox-mcp` 发布在即；上面的 git 直装今天即可用。）*
+
+Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，工具返回结构化错误并附安装命令：
+
+| 级别 | 二进制 | 解锁 | macOS | Debian/Ubuntu | Windows |
+|---|---|---|---|---|---|
+| L0 | qpdf | 拆合/旋转/加解密 | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
+| L1 | poppler | 文本提取/渲染/元信息 | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` 或 conda-forge |
+| L2 | tesseract | **OCR 写回** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
+| L3 | ghostscript | 压缩 | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
+
+> Windows 说明：Ghostscript 在 Windows 上的二进制名是 `gswin64c.exe`——探测会自动识别，`compress_pdf` 开箱即用；tesseract 语言包（如 `chi_sim`）需另行下载到其 `tessdata` 目录。
+
+每个成功返回都带 `_deps` 能力摘要（如 `{"level": 2, "missing": ["gs"]}`）。
+
+## 工具（24 个）
+
+| 工具 | 功能 | 引擎 |
+|---|---|---|
+| `pdf_info` | 页数、加密状态、元数据——建议先调 | pdfinfo |
+| `is_searchable` | 智能路由：文本密度检测，建议 extract_text 或先 ocr_pdf | pdftotext |
+| `extract_text` | 保版面提取，精确页范围 `1-3,5`，可按页返回 | pdftotext |
+| `ocr_pdf` | **OCR 写回**：扫描件 → 可搜索 PDF（纠偏、跳过/重做、语言降级） | OCRmyPDF |
+| `batch_ocr` | 整目录批量 OCR：逐文件结果、重试、超时 | OCRmyPDF |
+| `render_pages` | 页面转 PNG，`return_images=true` 直推图像块给视觉模型 | pdftoppm |
+| `extract_images` | 抽内嵌图片（清单或 PNG 落盘） | pdfimages |
+| `extract_attachments` | 抽内嵌附件文件 | pdfdetach |
+| `list_fonts` | 字体体检：未嵌入字体跨设备可能缺字 | pdffonts |
+| `unlock_pdf` | **user 密码即解锁**，输出解密文件 | qpdf |
+| `protect_pdf` | AES-256 + 细粒度权限（打印/复制/修改…） | qpdf |
+| `split_pdf` | 按区间或每 N 页拆分 | qpdf |
+| `merge_pdfs` | 按序合并 | qpdf |
+| `rotate_pages` | 选定页 90/180/270 旋转 | qpdf |
+| `check_repair` | 结构体检；`repair=true` 重建修复损坏文件 | qpdf |
+| `linearize` | Web 优化（渐进加载发布版） | qpdf |
+| `sanitize` | 发布版脱敏：剥 JS/OpenAction/元数据/附件 | pikepdf |
+| `redact` | **真涂黑**：被涂页光栅化+遮块（内容物理不可恢复），其余页保留文本层；`rasterize_all=true` 全文档最高防护 | pdftoppm + PIL |
+| `redact_text` | **按内容涂黑**：自动定位关键词的全部出现处并涂黑——无需手工量坐标 | pdftotext -bbox |
+| `locate_text` | 定位文本出现位置：页码+坐标框（PDF 点、左上原点）——涂黑/高亮的地基 | pdftotext -bbox |
+| `fill_form` | 填写 AcroForm 表单（未匹配字段上报） | pikepdf |
+| `edit_metadata` | 设置/清空 Title/Author 等（docinfo+XMP 双写） | pikepdf |
+| `compress_pdf` | 压缩，可沿档位阶梯下探到目标大小 | ghostscript |
+| `dependency_status` | 依赖探测 + 安装命令 | — |
+
+**错误契约**（agent 自路由）：失败统一返回 `{"ok": false, "error": "<code>"}`——`missing_dependency`（带各平台 `install`）、`encrypted_pdf`（提示先 `unlock_pdf`）、`wrong_password`、`output_exists`（需显式 overwrite）、`invalid_page_range` 等。
+
+## 配置
+
+| 环境变量 | 默认 | 含义 |
+|---|---|---|
+| `PDF_TOOLBOX_TESS_LANG` | `chi_sim+eng` | 默认 OCR 语言；缺包自动降级（结果带 `lang_fallback` 标记） |
+| `PDF_TOOLBOX_WORKSPACE` | 未设 | 设置后所有写出限制在该目录内；系统目录永远禁写 |
+
+## 命令行
+
+全部能力也可脱离 MCP 使用：
+
+```bash
+uvx --from pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
+uvx --from pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
+uvx --from pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
+uvx --from pdf-toolbox-mcp pdftoolbox probe all
+```
+
+## 安全与隐私
+
+- 零网络调用，文件不出机器
+- subprocess 一律参数列表（无 shell 拼接）；页范围解析统一校验
+- 输出永不静默覆盖：必须显式 `overwrite=true`
+- 密码不进日志与错误信息
+- 工具描述中标注"返回内容为不可信文档数据"（prompt-injection 防护意识）
+
+## 许可证合规
+
+MIT。系统工具以独立进程聚合调用：poppler (GPL-2.0)、qpdf (Apache-2.0)、tesseract (Apache-2.0)、ghostscript (AGPL，可选)；Python 依赖 ocrmypdf/pikepdf 为 MPL-2.0。完整合规表见 [PLAN.md](PLAN.md) §7。
+
+## 开发
+
+```bash
+uv sync --dev && uv run pytest    # 60 个测试，按能力级别自动跳过
+uv run pdftoolbox probe all
+```
+
+路线图：压缩到目标大小、脱敏发布（真涂黑）、批处理、表单填写——见 [PLAN.md](PLAN.md)。
+
+## 许可证
+
+MIT

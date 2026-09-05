@@ -1,0 +1,81 @@
+[project]
+name = "pdf-toolbox-mcp"
+version = "0.1.0"
+description = "Local-first PDF processing MCP server — OCR write-back, text extraction, page rendering, page surgery, encryption (OCRmyPDF + Poppler + qpdf)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "zhangkun" }]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "pdf",
+    "ocr",
+    "ocrmypdf",
+    "poppler",
+    "qpdf",
+    "local-first",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Text Processing",
+]
+dependencies = [
+    "fastmcp>=2.0",
+    "ocrmypdf>=16.0",
+    "pikepdf>=9.0",
+    "pillow>=11.0",
+    "typer>=0.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/twoer/pdf-toolbox-mcp"
+Repository = "https://github.com/twoer/pdf-toolbox-mcp"
+Issues = "https://github.com/twoer/pdf-toolbox-mcp/issues"
+Changelog = "https://github.com/twoer/pdf-toolbox-mcp/commits/main/"
+
+[project.scripts]
+pdftoolbox = "pdf_toolbox.cli:app"
+pdf-toolbox-mcp = "pdf_toolbox.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_toolbox"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "fpdf2>=2.8",
+    "pillow>=11.0",
+    "ruff>=0.16.6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+src = ["src", "tests", "tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "SIM", "RUF", "UP"]
+ignore = [
+    "B008",   # typer.Option(...) 作默认值是框架惯例
+    "EXE001", # tools/*.py 以 uv run 调用，无需 +x
+    "S110",   # 探测类代码的 try-except-pass 是有意为之
+    "RUF001", # 中文项目的全角标点字符串（错误信息/输出文案）
+    "RUF002", # 中文项目的全角标点文档字符串
+    "RUF003", # 中文项目的全角标点注释
+]
