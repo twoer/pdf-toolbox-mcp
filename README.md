@@ -1,6 +1,6 @@
 # pdf-toolbox-mcp
 
-[中文文档](README.zh-CN.md) | Local-first PDF processing for AI agents.
+[中文文档](https://github.com/twoer/pdf-toolbox-mcp/blob/main/README.zh-CN.md) | Local-first PDF processing for AI agents.
 
 **Others help AI *read* PDFs. This one helps AI *process* them** — OCR a scan into a truly searchable file, unlock encrypted PDFs, split/merge/rotate, re-encrypt for sharing. 100% on your machine: no cloud calls, no file uploads, no per-page fees.
 

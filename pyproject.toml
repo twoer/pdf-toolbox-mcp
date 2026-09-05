@@ -1,6 +1,6 @@
 [project]
 name = "pdf-toolbox-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local-first PDF processing MCP server — OCR write-back, text extraction, page rendering, page surgery, encryption (OCRmyPDF + Poppler + qpdf)"
 readme = "README.md"
 requires-python = ">=3.12"
