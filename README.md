@@ -21,6 +21,8 @@ Add to any MCP client:
 }
 ```
 
+PyPI project page: [pdf-toolbox-mcp](https://pypi.org/project/pdf-toolbox-mcp/)
+
 Need a paste-ready setup for a specific client? Run `uv run pdftoolbox client list` or `uv run pdftoolbox client show claude-desktop`.
 Cursor users can also use `uv run pdftoolbox client show cursor` for a deeplink-ready setup.
 Run `uv run pdftoolbox client show universal` to generate a project-level `.mcp.json`.
@@ -39,8 +41,6 @@ First task:
 MCP first task:
 1. Ask `tool_doctor`
 2. Then call `tool_ocr_pdf`
-
-*(PyPI package `pdf-toolbox-mcp` is coming; the git install above works today.)*
 
 Python dependencies resolve automatically. System tools are **capability-leveled** — missing ones never crash the server; the tool returns a structured error with the exact install command:
 
@@ -112,7 +112,7 @@ In an MCP client, just describe the outcome — the agent chains the tools itsel
 
 ```bash
 PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
-# shortens to "uvx --from pdf-toolbox-mcp pdftoolbox" once the PyPI package lands
+# PyPI form: uvx --from pdf-toolbox-mcp pdftoolbox
 ```
 
 **1 · Scan → searchable PDF** (the flagship)
@@ -167,7 +167,7 @@ uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox split big.pdf
 uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox probe all
 ```
 
-*(Shortens to `uvx --from pdf-toolbox-mcp …` once the PyPI package is published — see the note in Quick start.)*
+*(Use `uvx --from pdf-toolbox-mcp …` when installing from PyPI.)*
 
 ## Security & privacy
 
@@ -201,7 +201,7 @@ docker run --rm -v "$PWD":/src:ro python:3.12-slim bash -c \
    pip install -q uv && cp -r /src /work && cd /work && uv sync --dev --quiet && uv run pytest -q'
 ```
 
-Roadmap: v0.1.0 ships all 25 tools above. Next up: the PyPI package (drops the git prefix from every command) and hardening against real-world scanned documents. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
+Roadmap: v0.1.0 ships all 25 tools above. Next up: hardening against real-world scanned documents. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
 
 ## License
 

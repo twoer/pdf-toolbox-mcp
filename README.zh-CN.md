@@ -21,6 +21,8 @@
 }
 ```
 
+PyPI 项目页：[pdf-toolbox-mcp](https://pypi.org/project/pdf-toolbox-mcp/)
+
 想要某个客户端的可直接粘贴配置？运行 `uv run pdftoolbox client list` 或 `uv run pdftoolbox client show claude-desktop`。
 Cursor 还可以直接看 `uv run pdftoolbox client show cursor`，会给出 deeplink 版本。
 要生成项目级 `.mcp.json`，运行 `uv run pdftoolbox client show universal`。
@@ -39,8 +41,6 @@ Cursor 还可以直接看 `uv run pdftoolbox client show cursor`，会给出 dee
 MCP 第一单任务：
 1. 先问 `tool_doctor`
 2. 再调 `tool_ocr_pdf`
-
-*（PyPI 包 `pdf-toolbox-mcp` 发布在即；上面的 git 直装今天即可用。）*
 
 Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，工具返回结构化错误并附安装命令：
 
@@ -112,7 +112,7 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 
 ```bash
 PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
-# PyPI 包发布后可简化为 "uvx --from pdf-toolbox-mcp pdftoolbox"
+# PyPI 版：uvx --from pdf-toolbox-mcp pdftoolbox
 ```
 
 **1 · 扫描件 → 可搜索 PDF**（招牌能力）
@@ -167,7 +167,7 @@ uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox split big.pdf
 uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox probe all
 ```
 
-*（PyPI 包发布后可去掉 git 前缀，简写为 `uvx --from pdf-toolbox-mcp …`——见快速开始中的说明。）*
+*（安装 PyPI 版后可直接用 `uvx --from pdf-toolbox-mcp …`。）*
 
 ## 安全与隐私
 
@@ -192,7 +192,7 @@ uv run python tools/onboarding_check.py
 uv run python tools/onboarding_check.py --json
 ```
 
-路线图：v0.1.0 已交付上表全部 25 个工具。下一步：PyPI 包（所有命令可去掉 git 前缀）、真实扫描件加固。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
+路线图：v0.1.0 已交付上表全部 25 个工具。下一步：真实扫描件加固。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
 
 ## 许可证
 
