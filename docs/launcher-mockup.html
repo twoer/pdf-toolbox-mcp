@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>pdf-toolbox-mcp launcher mockup</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1016;
+      --bg-2: #101823;
+      --panel: rgba(14, 20, 29, 0.92);
+      --panel-2: rgba(18, 26, 37, 0.96);
+      --line: rgba(160, 182, 205, 0.16);
+      --line-strong: rgba(160, 182, 205, 0.24);
+      --text: #e7edf5;
+      --muted: #92a3b8;
+      --soft: #68788e;
+      --accent: #53d3c0;
+      --accent-2: #ffb76b;
+      --accent-3: #8ab4ff;
+      --danger: #ff7c8b;
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.44);
+      --radius: 8px;
+      --radius-sm: 6px;
+      --font-sans: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", "Noto Sans", sans-serif;
+      --font-display: "SF Pro Display", "Avenir Next", "Segoe UI Variable Display", "Noto Sans", sans-serif;
+      --font-mono: "SFMono-Regular", "Cascadia Mono", "JetBrains Mono", "Menlo", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), transparent 24%),
+        radial-gradient(circle at 12% 8%, rgba(83, 211, 192, 0.12), transparent 22%),
+        radial-gradient(circle at 88% 14%, rgba(138, 180, 255, 0.09), transparent 20%),
+        linear-gradient(135deg, #090d13 0%, #0c121a 42%, #0a0f16 100%);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.18;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.85), transparent 92%);
+    }
+
+    .app {
+      position: relative;
+      height: 100%;
+      padding: 16px;
+    }
+
+    .window {
+      height: 100%;
+      border: 1px solid rgba(182, 202, 224, 0.12);
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), transparent 14%),
+        linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)),
+        rgba(7, 12, 18, 0.88);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar,
+    .footerbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-color: var(--line);
+    }
+
+    .topbar {
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(18, 26, 37, 0.92), rgba(12, 17, 24, 0.72));
+    }
+
+    .footerbar {
+      border-top: 1px solid var(--line);
+      background: rgba(10, 15, 21, 0.86);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(145deg, rgba(83, 211, 192, 0.18), rgba(255, 183, 107, 0.10)),
+        rgba(18, 26, 37, 0.94);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: 0;
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font: 700 17px/1.15 var(--font-display);
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge,
+    .pill,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .tag.accent { color: var(--accent); border-color: rgba(83, 211, 192, 0.28); background: rgba(83, 211, 192, 0.08); }
+    .tag.warn { color: var(--accent-2); border-color: rgba(255, 183, 107, 0.28); background: rgba(255, 183, 107, 0.08); }
+    .tag.soft { color: var(--accent-3); border-color: rgba(138, 180, 255, 0.24); background: rgba(138, 180, 255, 0.08); }
+
+    .ui-icon-text {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1;
+    }
+
+    .ui-action-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.035);
+      color: var(--text);
+      border-radius: 8px;
+      min-height: 34px;
+      padding: 0 11px;
+      font: 600 13px/1 var(--font-sans);
+      cursor: pointer;
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    }
+
+    .button:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .button:focus-visible {
+      outline: 2px solid rgba(83, 211, 192, 0.6);
+      outline-offset: 2px;
+    }
+
+    .button.primary {
+      border-color: rgba(83, 211, 192, 0.38);
+      background: linear-gradient(180deg, rgba(83, 211, 192, 0.20), rgba(83, 211, 192, 0.08));
+      color: #eafffb;
+    }
+
+    .button.ghost {
+      background: transparent;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 252px minmax(0, 1fr) 304px;
+      gap: 12px;
+      padding: 10px;
+      min-height: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.01), transparent 20%),
+        linear-gradient(180deg, rgba(15, 21, 31, 0.86), rgba(10, 15, 21, 0.96));
+    }
+
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008)), var(--panel);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .panel-head h2,
+    .panel-head h3 {
+      margin: 0;
+      font: 700 13px/1.2 var(--font-display);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #f3f7fb;
+    }
+
+    .panel-head small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .panel-body {
+      padding: 10px;
+      min-height: 0;
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      min-height: 0;
+    }
+
+    .library {
+      display: grid;
+      gap: 8px;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.025);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+    }
+
+    .list-item:hover {
+      border-color: rgba(83, 211, 192, 0.30);
+      background: rgba(83, 211, 192, 0.05);
+      transform: translateY(-1px);
+    }
+
+    .list-item.active {
+      border-color: rgba(83, 211, 192, 0.44);
+      background: rgba(83, 211, 192, 0.09);
+      box-shadow: inset 0 0 0 1px rgba(83, 211, 192, 0.16);
+    }
+
+    .list-item h4,
+    .flow h4,
+    .run h4 {
+      margin: 0;
+      font: 650 14px/1.2 var(--font-sans);
+    }
+
+    .list-item p,
+    .flow p,
+    .run p,
+    .note p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .meta-col {
+      text-align: right;
+      color: var(--soft);
+      font-size: 11px;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .flow-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .flow {
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.025);
+      padding: 10px;
+    }
+
+    .flow.selected {
+      border-color: rgba(138, 180, 255, 0.34);
+      background: rgba(138, 180, 255, 0.08);
+    }
+
+    .flow-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #d7e2ee;
+      font-size: 11px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .hero {
+      position: relative;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, rgba(83, 211, 192, 0.10), transparent 40%),
+        linear-gradient(225deg, rgba(255, 183, 107, 0.09), transparent 46%),
+        rgba(15, 21, 31, 0.92);
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -24px -40px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(83, 211, 192, 0.12), transparent 68%);
+      pointer-events: none;
+      filter: blur(6px);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title {
+      min-width: 0;
+    }
+
+    .hero-title h2 {
+      margin: 4px 0 8px;
+      font: 700 30px/1.05 var(--font-display);
+      letter-spacing: 0;
+    }
+
+    .hero-title p {
+      margin: 0;
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .hero-rail {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(83, 211, 192, 0.14);
+      flex: 0 0 auto;
+    }
+
+    .dropzone {
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px dashed rgba(160, 182, 205, 0.24);
+      background: rgba(10, 15, 21, 0.78);
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(240px, 0.7fr);
+      gap: 12px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .dropzone strong {
+      display: block;
+      font: 650 15px/1.3 var(--font-sans);
+      margin-bottom: 6px;
+    }
+
+    .dropzone p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .dropzone-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .sticky-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(0, 0.84fr);
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .section {
+      display: grid;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .command-card,
+    .detail-card,
+    .log-card,
+    .status-card,
+    .queue-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-2);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .command-card .panel-body,
+    .detail-card .panel-body,
+    .log-card .panel-body,
+    .status-card .panel-body,
+    .queue-card .panel-body {
+      padding: 10px;
+    }
+
+    .command {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(83, 211, 192, 0.22);
+      background: linear-gradient(180deg, rgba(11, 18, 25, 0.98), rgba(8, 12, 16, 0.98));
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: #d6f7f0;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 96px;
+    }
+
+    .command .dim { color: #8ba7a0; }
+    .command .accent { color: var(--accent); }
+    .command .warn { color: var(--accent-2); }
+    .command .soft { color: #a7d9ff; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.024);
+      min-width: 0;
+    }
+
+    .stat strong {
+      display: block;
+      font: 700 18px/1.1 var(--font-display);
+      color: #f7fbff;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .steps {
+      display: grid;
+      gap: 8px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.024);
+      min-width: 0;
+    }
+
+    .step-index {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: rgba(83, 211, 192, 0.12);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .status-list,
+    .queue-list,
+    .note-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-row,
+    .queue-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.024);
+      min-width: 0;
+    }
+
+    .status-row strong,
+    .queue-row strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .status-row span,
+    .queue-row span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .level {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 72px;
+      justify-content: flex-end;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .level i {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .level.warn i { background: var(--accent-2); }
+    .level.off i { background: var(--danger); }
+
+    .note {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.024);
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .output-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      min-width: 0;
+    }
+
+    .output-bar code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #e6f7ff;
+      white-space: nowrap;
+    }
+
+    .footerbar .left,
+    .footerbar .right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .footerbar .right {
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .footerbar strong {
+      font-size: 12px;
+      color: #eff5fb;
+      white-space: nowrap;
+    }
+
+    .footerbar span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 11px;
+      color: var(--soft);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1240px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100%; }
+      .window { min-height: calc(100vh - 40px); }
+      .shell {
+        grid-template-columns: 1fr;
+      }
+      .sticky-grid {
+        grid-template-columns: 1fr;
+      }
+      .dropzone {
+        grid-template-columns: 1fr;
+      }
+      .dropzone-actions {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app { padding: 10px; }
+      .topbar,
+      .footerbar {
+        padding: 10px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .hero-title h2 {
+        font-size: 24px;
+      }
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-rail {
+        justify-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="window" role="application" aria-label="pdf-toolbox-mcp launcher mockup">
+      <header class="topbar">
+        <div class="brand">
+          <div class="mark" aria-hidden="true">PT</div>
+          <div>
+            <h1>pdf-toolbox-mcp launcher</h1>
+            <p>Thin client for local PDF tasks, doctor-first onboarding, no chat shell.</p>
+          </div>
+        </div>
+
+        <div class="header-meta">
+          <span class="tag accent">
+            <span class="status-dot" aria-hidden="true"></span>
+            Local only
+          </span>
+          <span class="tag soft">24 tools ready</span>
+          <span class="tag warn">1 pending dependency</span>
+          <div class="ui-action-group" aria-label="top actions">
+            <button class="button ghost" type="button" id="btn-open">
+              <span class="ui-icon-text">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 3h7v7"></path>
+                  <path d="M10 14L21 3"></path>
+                  <path d="M21 14v6a1 1 0 0 1-1 1h-6"></path>
+                  <path d="M13 21H5a1 1 0 0 1-1-1v-8"></path>
+                </svg>
+                <span>Open PDF</span>
+              </span>
+            </button>
+            <button class="button primary" type="button" id="btn-doctor">
+              <span class="ui-icon-text">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 8v8"></path>
+                  <path d="M8 12h8"></path>
+                  <path d="M4 12a8 8 0 1 0 16 0 8 8 0 1 0-16 0"></path>
+                </svg>
+                <span>Run doctor</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="shell">
+        <aside class="panel sidebar">
+          <div class="panel-head">
+            <div>
+              <h2>Library</h2>
+              <small>Recent inputs and entry points</small>
+            </div>
+            <span class="pill">Pinned 3</span>
+          </div>
+          <div class="panel-body library">
+            <button class="list-item active" type="button" data-file="scanned-contract.pdf">
+              <div>
+                <h4>scanned-contract.pdf</h4>
+                <p>Needs OCR before search.</p>
+              </div>
+              <div class="meta-col">
+                24 pages<br />2 min ago
+              </div>
+            </button>
+            <button class="list-item" type="button" data-file="locked-specimen.pdf">
+              <div>
+                <h4>locked-specimen.pdf</h4>
+                <p>User password required.</p>
+              </div>
+              <div class="meta-col">
+                18 pages<br />yesterday
+              </div>
+            </button>
+            <button class="list-item" type="button" data-file="batch-folder/">
+              <div>
+                <h4>batch-folder/</h4>
+                <p>Batch OCR queue.</p>
+              </div>
+              <div class="meta-col">
+                36 files<br />this week
+              </div>
+            </button>
+          </div>
+
+          <div class="panel-head">
+            <div>
+              <h2>Shortcuts</h2>
+              <small>Fast lane presets</small>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="flow-list" id="preset-list"></div>
+          </div>
+        </aside>
+
+        <section class="main">
+          <section class="hero">
+            <div class="hero-top">
+              <div class="hero-title">
+                <span class="badge">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  Thin client concept
+                </span>
+                <h2 id="hero-title">Scan to searchable PDF</h2>
+                <p id="hero-copy">
+                  The launcher is just an entry layer: pick a file, choose a preset, inspect the dependency snapshot,
+                  then hand the actual work to the local engine.
+                </p>
+              </div>
+              <div class="hero-rail">
+                <span class="tag accent" id="hero-outcome">Output: searchable PDF</span>
+                <span class="tag soft" id="hero-deps">Needs: poppler + tesseract</span>
+                <span class="tag warn" id="hero-risk">Risk: long OCR jobs</span>
+              </div>
+            </div>
+
+            <div class="dropzone" aria-label="drop zone mockup">
+              <div>
+                <strong id="drop-title">Drop a PDF here or choose a file</strong>
+                <p id="drop-copy">
+                  This surface is the main affordance: it keeps the first move obvious and keeps all the
+                  complexity in the system panel, where a user can see it.
+                </p>
+              </div>
+              <div class="dropzone-actions">
+                <button class="button" type="button">
+                  <span class="ui-icon-text">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 5v14"></path>
+                      <path d="M5 12h14"></path>
+                    </svg>
+                    <span>Add file</span>
+                  </span>
+                </button>
+                <button class="button primary" type="button">
+                  <span class="ui-icon-text">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M8 5v14l11-7z"></path>
+                    </svg>
+                    <span>Run selected flow</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="sticky-grid">
+            <div class="section">
+              <div class="command-card">
+                <div class="panel-head">
+                  <div>
+                    <h3>Command preview</h3>
+                    <small id="command-label">Ready to OCR a scan</small>
+                  </div>
+                  <span class="pill">Live preview</span>
+                </div>
+                <div class="panel-body">
+                  <div class="command" id="command-output" aria-live="polite"></div>
+                </div>
+              </div>
+
+              <div class="detail-card">
+                <div class="panel-head">
+                  <div>
+                    <h3>Flow anatomy</h3>
+                    <small>What the launcher exposes, not what it hides</small>
+                  </div>
+                  <span class="pill">3 steps</span>
+                </div>
+                <div class="panel-body">
+                  <div class="detail-grid">
+                    <div class="stat">
+                      <strong id="stat-1">1</strong>
+                      <span id="stat-1-copy">File selection and quick validation.</span>
+                    </div>
+                    <div class="stat">
+                      <strong id="stat-2">2</strong>
+                      <span id="stat-2-copy">Preset choice with dependency hints.</span>
+                    </div>
+                    <div class="stat">
+                      <strong id="stat-3">3</strong>
+                      <span id="stat-3-copy">Run, preview, export, repeat.</span>
+                    </div>
+                  </div>
+                  <div class="steps" id="step-list"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="status-card">
+                <div class="panel-head">
+                  <div>
+                    <h3>Dependency status</h3>
+                    <small>Capability-led startup checks</small>
+                  </div>
+                  <span class="pill">Doctor-driven</span>
+                </div>
+                <div class="panel-body">
+                  <div class="status-list">
+                    <div class="status-row">
+                      <div>
+                        <strong>qpdf</strong>
+                        <span>Split, merge, rotate, protect.</span>
+                      </div>
+                      <div class="level"><i></i> level 0</div>
+                    </div>
+                    <div class="status-row">
+                      <div>
+                        <strong>poppler</strong>
+                        <span>Text extract, render, fonts.</span>
+                      </div>
+                      <div class="level"><i></i> level 1</div>
+                    </div>
+                    <div class="status-row">
+                      <div>
+                        <strong>tesseract</strong>
+                        <span>OCR write-back and language packs.</span>
+                      </div>
+                      <div class="level"><i></i> level 2</div>
+                    </div>
+                    <div class="status-row">
+                      <div>
+                        <strong>ghostscript</strong>
+                        <span>Compression and size reduction.</span>
+                      </div>
+                      <div class="level warn"><i></i> optional</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="queue-card">
+                <div class="panel-head">
+                  <div>
+                    <h3>Run queue</h3>
+                    <small>Recent and scheduled actions</small>
+                  </div>
+                  <span class="pill">3 items</span>
+                </div>
+                <div class="panel-body">
+                  <div class="queue-list">
+                    <div class="queue-row">
+                      <div>
+                        <strong>OCR batch</strong>
+                        <span>12 files, quiet mode.</span>
+                      </div>
+                      <div class="meta-col">running<br />04:21</div>
+                    </div>
+                    <div class="queue-row">
+                      <div>
+                        <strong>Unlock + extract</strong>
+                        <span>Waiting for password.</span>
+                      </div>
+                      <div class="meta-col">paused<br />09:10</div>
+                    </div>
+                    <div class="queue-row">
+                      <div>
+                        <strong>Doctor snapshot</strong>
+                        <span>Fresh capability probe.</span>
+                      </div>
+                      <div class="meta-col">done<br />08:56</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-card">
+                <div class="panel-head">
+                  <div>
+                    <h3>Notes</h3>
+                    <small>Why the launcher stays thin</small>
+                  </div>
+                </div>
+                <div class="panel-body">
+                  <div class="note-list">
+                    <div class="note">
+                      <strong>Keep the first step obvious</strong>
+                      <p>People should see doctor, file selection, and the first preset without hunting.</p>
+                    </div>
+                    <div class="note">
+                      <strong>Expose capability, not clutter</strong>
+                      <p>Show the dependency snapshot and hand off the work to the engine.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <footer class="footerbar">
+        <div class="left">
+          <span class="tag accent">Workspace locked</span>
+          <strong id="footer-title">scan to searchable PDF</strong>
+          <span id="footer-copy">Doctor first, then OCR.</span>
+        </div>
+        <div class="right">
+          <span class="output-bar">
+            <span>Preview:</span>
+            <code id="footer-command">pdftoolbox doctor</code>
+          </span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const presets = [
+      {
+        key: "ocr",
+        file: "scanned-contract.pdf",
+        title: "Scan to searchable PDF",
+        copy: "Turn a scanned PDF into something that can be searched, copied, and reviewed locally.",
+        outcome: "Output: searchable PDF",
+        deps: "Needs: poppler + tesseract",
+        risk: "Risk: OCR can take time on large scans",
+        commandLabel: "Ready to OCR a scan",
+        command: [
+          "<span class=\"dim\">$</span> <span class=\"accent\">pdftoolbox</span> <span>doctor</span>",
+          "<span class=\"dim\">$</span> <span class=\"accent\">pdftoolbox</span> <span>ocr scanned-contract.pdf</span> <span class=\"soft\">--lang</span> <span>chi_sim+eng</span>",
+          "",
+          "<span class=\"dim\">#</span> output: scanned-contract_ocr.pdf",
+        ].join("\n"),
+        steps: [
+          ["Pick", "Drop a scan or choose a file from the recent queue."],
+          ["Probe", "Check poppler and tesseract before starting long work."],
+          ["Run", "Write the text layer back and keep the file local."],
+        ],
+      },
+      {
+        key: "unlock",
+        file: "locked-specimen.pdf",
+        title: "Unlock encrypted PDF",
+        copy: "Use the user password to unlock a file, then pass it into extract or OCR flows.",
+        outcome: "Output: decrypted PDF",
+        deps: "Needs: qpdf",
+        risk: "Risk: wrong password stops the flow",
+        commandLabel: "Ready to unlock",
+        command: [
+          "<span class=\"dim\">$</span> <span class=\"accent\">pdftoolbox</span> <span>unlock locked-specimen.pdf</span> <span class=\"soft\">--password</span> <span class=\"warn\">***</span>",
+          "",
+          "<span class=\"dim\">#</span> output: locked-specimen_unlocked.pdf",
+        ].join("\n"),
+        steps: [
+          ["Choose", "Select the locked file and keep the password masked."],
+          ["Confirm", "Surface only the missing dependency or password problem."],
+          ["Hand off", "Return a clean unlocked file to the next flow."],
+        ],
+      },
+      {
+        key: "redact",
+        file: "draft.pdf",
+        title: "Redact and publish",
+        copy: "Remove sensitive content and produce a share-safe export with visible loss where needed.",
+        outcome: "Output: sanitized publish copy",
+        deps: "Needs: qpdf + poppler",
+        risk: "Risk: redaction destroys text recoverability",
+        commandLabel: "Ready to redact",
+        command: [
+          "<span class=\"dim\">$</span> <span class=\"accent\">pdftoolbox</span> <span>redact-text draft.pdf</span> <span class=\"soft\">--query</span> <span>张三</span>",
+          "",
+          "<span class=\"dim\">#</span> output: draft_redacted.pdf",
+        ].join("\n"),
+        steps: [
+          ["Locate", "Find every occurrence of the target text or region."],
+          ["Mask", "Rasterize what must not be recoverable."],
+          ["Publish", "Export a file fit for external sharing."],
+        ],
+      },
+    ];
+
+    const presetList = document.getElementById("preset-list");
+    const stepList = document.getElementById("step-list");
+    const heroTitle = document.getElementById("hero-title");
+    const heroCopy = document.getElementById("hero-copy");
+    const heroOutcome = document.getElementById("hero-outcome");
+    const heroDeps = document.getElementById("hero-deps");
+    const heroRisk = document.getElementById("hero-risk");
+    const dropTitle = document.getElementById("drop-title");
+    const dropCopy = document.getElementById("drop-copy");
+    const commandOutput = document.getElementById("command-output");
+    const commandLabel = document.getElementById("command-label");
+    const footerTitle = document.getElementById("footer-title");
+    const footerCopy = document.getElementById("footer-copy");
+    const footerCommand = document.getElementById("footer-command");
+    const fileButtons = Array.from(document.querySelectorAll(".list-item"));
+
+    function iconArrow() {
+      return `
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14"></path>
+          <path d="M13 5l7 7-7 7"></path>
+        </svg>
+      `;
+    }
+
+    function renderPreset(preset) {
+      heroTitle.textContent = preset.title;
+      heroCopy.textContent = preset.copy;
+      heroOutcome.textContent = preset.outcome;
+      heroDeps.textContent = preset.deps;
+      heroRisk.textContent = preset.risk;
+      dropTitle.textContent = preset.title;
+      dropCopy.textContent = preset.copy;
+      commandLabel.textContent = preset.commandLabel;
+      commandOutput.innerHTML = preset.command;
+      footerTitle.textContent = preset.title.toLowerCase();
+      footerCopy.textContent = preset.deps;
+      footerCommand.textContent = preset.key === "ocr" ? "pdftoolbox doctor" : `pdftoolbox ${preset.key}`;
+
+      stepList.innerHTML = preset.steps.map((step, index) => `
+        <div class="step">
+          <div class="step-index">${index + 1}</div>
+          <div>
+            <strong>${step[0]}</strong>
+            <p>${step[1]}</p>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPresetList() {
+      presetList.innerHTML = presets.map((preset, index) => `
+        <button class="flow ${index === 0 ? "selected" : ""}" type="button" data-key="${preset.key}">
+          <div class="flow-top">
+            <div>
+              <h4>${preset.title}</h4>
+              <p>${preset.copy}</p>
+            </div>
+            <span class="pill">${preset.key}</span>
+          </div>
+          <div class="flow-steps">
+            <span class="chip">${preset.outcome}</span>
+            <span class="chip">${preset.deps}</span>
+          </div>
+        </button>
+      `).join("");
+    }
+
+    function selectPreset(key) {
+      const preset = presets.find((item) => item.key === key) || presets[0];
+      renderPreset(preset);
+      document.querySelectorAll(".flow").forEach((node) => {
+        node.classList.toggle("selected", node.dataset.key === preset.key);
+      });
+      fileButtons.forEach((node) => {
+        node.classList.toggle("active", node.dataset.file === preset.file);
+      });
+    }
+
+    renderPresetList();
+    selectPreset("ocr");
+
+    presetList.addEventListener("click", (event) => {
+      const button = event.target.closest(".flow");
+      if (!button) return;
+      selectPreset(button.dataset.key);
+    });
+
+    fileButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const matched = presets.find((preset) => preset.file === button.dataset.file);
+        if (matched) {
+          selectPreset(matched.key);
+        }
+      });
+    });
+
+    document.getElementById("btn-doctor").addEventListener("click", () => selectPreset("ocr"));
+    document.getElementById("btn-open").addEventListener("click", () => {
+      const next = presets[1];
+      selectPreset(next.key);
+    });
+  </script>
+</body>
+</html>

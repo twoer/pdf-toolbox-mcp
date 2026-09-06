@@ -1,0 +1,21 @@
+name: Realworld Regression
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  realworld:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install system dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf ghostscript tesseract-ocr
+      - name: Sync Python dependencies
+        run: uv sync --dev
+      - name: Run realworld tests
+        run: uv run pytest -v -m realworld

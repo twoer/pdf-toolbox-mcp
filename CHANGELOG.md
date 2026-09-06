@@ -3,11 +3,15 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
-## [Unreleased] — 0.1.1
+## [0.1.3] — 2026-09-06
 
-First functional build. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf + ghostscript), 24 tools, 105 tests green on macOS / Linux / Windows CI.
+Release 0.1.3. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf + ghostscript).
 
 ### Added
+- Real-world regression suite with manifest-driven cases for low-res OCR, encrypted unlock, repair, batch OCR, sanitize, forms, and compression
+- CI split so normal runs skip slower realworld fixtures, plus a scheduled `realworld` workflow
+- Registry metadata, launch kit docs, and the launcher mockup asset
+- README dependency matrix now includes one-shot install commands and upstream links
 - **Content redaction**: `locate_text` (text → page + bounding boxes via `pdftotext -bbox`, CJK-safe normalized matching) and `redact_text` (redact by keyword — auto-locates every occurrence, no manual coordinates)
 - **P1a core**: `pdf_info`, `is_searchable` (smart routing), `extract_text` (exact page ranges), `ocr_pdf` (**OCR write-back** to searchable PDF, language fallback), `render_pages` (PNG, optional inline image blocks), `unlock_pdf` (user-password decrypt — competitors hard-fail here)
 - **P1b page surgery** (L0-pure qpdf): `split_pdf`, `merge_pdfs`, `rotate_pages`, `protect_pdf` (AES-256 + granular permissions)
@@ -25,3 +29,4 @@ First functional build. Local-first PDF processing MCP server (OCRmyPDF + Popple
 - 50-file batch: 50/50 success, ~1.6 s/file
 
 [Unreleased]: https://github.com/twoer/pdf-toolbox-mcp/commits/main
+[0.1.3]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.3

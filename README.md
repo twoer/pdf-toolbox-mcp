@@ -15,13 +15,14 @@ Add to any MCP client:
   "mcpServers": {
     "pdf-toolbox": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
+      "args": ["--from", "pdf-toolbox-mcp", "pdftoolbox"]
     }
   }
 }
 ```
 
 PyPI project page: [pdf-toolbox-mcp](https://pypi.org/project/pdf-toolbox-mcp/)
+<!-- mcp-name: io.github.twoer/pdf-toolbox-mcp -->
 
 Need a paste-ready setup for a specific client? Run `uv run pdftoolbox client list` or `uv run pdftoolbox client show claude-desktop`.
 Cursor users can also use `uv run pdftoolbox client show cursor` for a deeplink-ready setup.
@@ -44,6 +45,12 @@ MCP first task:
 
 Python dependencies resolve automatically. System tools are **capability-leveled** — missing ones never crash the server; the tool returns a structured error with the exact install command:
 
+Need the full stack in one shot?
+
+- macOS: `brew install qpdf poppler tesseract tesseract-lang ghostscript`
+- Debian/Ubuntu: `sudo apt install qpdf poppler-utils tesseract-ocr tesseract-ocr-chi-sim ghostscript`
+- Windows: use the per-package commands in the table below
+
 | Level | Binary | Unlocks | macOS | Debian/Ubuntu | Windows |
 |---|---|---|---|---|---|
 | L0 | qpdf | split / merge / rotate / protect / unlock | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
@@ -52,6 +59,13 @@ Python dependencies resolve automatically. System tools are **capability-leveled
 | L3 | ghostscript | compress | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
 
 > Windows note: Ghostscript's binary is `gswin64c.exe` there — the probe detects it automatically, so `compress_pdf` works out of the box. Tesseract language packs (e.g. `chi_sim`) must be downloaded to its `tessdata` folder separately.
+
+Upstream / reference:
+
+- qpdf: [website](https://qpdf.sourceforge.io/) · [repo](https://github.com/qpdf/qpdf)
+- poppler: [website](https://poppler.freedesktop.org/)
+- tesseract: [repo](https://github.com/tesseract-ocr/tesseract)
+- ghostscript: [website](https://ghostscript.com/) · [releases](https://ghostscript.com/releases/)
 
 Every successful response carries a `_deps` summary (`{"level": 2, "missing": ["gs"]}`) so the agent always knows what's available.
 
@@ -111,7 +125,7 @@ Pain points this addresses directly:
 In an MCP client, just describe the outcome — the agent chains the tools itself, and the error contract makes it self-routing (an `encrypted_pdf` error tells it to call `unlock_pdf` first, and so on). For headless use, define once:
 
 ```bash
-PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
+PTX="uvx --from pdf-toolbox-mcp pdftoolbox"
 # PyPI form: uvx --from pdf-toolbox-mcp pdftoolbox
 ```
 
@@ -161,10 +175,10 @@ More recipes — merge & protect, compress-to-target, batch OCR, the publish-hyg
 Everything is also available headless (great for scripts and CI):
 
 ```bash
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox probe all
+uvx --from pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
+uvx --from pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
+uvx --from pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
+uvx --from pdf-toolbox-mcp pdftoolbox probe all
 ```
 
 *(Use `uvx --from pdf-toolbox-mcp …` when installing from PyPI.)*
@@ -185,7 +199,9 @@ MIT. System tools are invoked as independent processes (aggregation): poppler (G
 
 ```bash
 uv sync --dev          # install
-uv run pytest          # 115 tests; auto-skip by capability level
+uv run pytest -m "not realworld"  # fast path
+uv run pytest -m realworld        # noisy / slower regression pack
+uv run pytest                     # full suite
 uv run pdftoolbox probe all
 uv run pdftoolbox probe all --json   # structured dependency snapshot
 uv run pdftoolbox doctor

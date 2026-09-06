@@ -1,6 +1,6 @@
 [project]
 name = "pdf-toolbox-mcp"
-version = "0.1.2"
+version = "0.1.3"
 description = "Local-first PDF processing MCP server — OCR write-back, text extraction, page rendering, page surgery, encryption (OCRmyPDF + Poppler + qpdf)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -64,6 +64,9 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "realworld: tests that exercise larger, noisier, or slower real-world PDF fixtures",
+]
 
 [tool.ruff]
 line-length = 120

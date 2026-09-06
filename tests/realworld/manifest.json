@@ -1,0 +1,77 @@
+{
+  "name": "realworld-regressions",
+  "version": 1,
+  "purpose": "Regression fixtures for noisy, encrypted, corrupted, and multi-page PDF workflows.",
+  "samples": [
+    {
+      "id": "low_res_scan",
+      "fixture": "low_res_scanned_pdf",
+      "use": "OCR on a low-quality scan.",
+      "assertions": [
+        "is_searchable recommends ocr_pdf",
+        "ocr_pdf returns an eng OCR output",
+        "marker text remains searchable after OCR"
+      ]
+    },
+    {
+      "id": "encrypted_contract",
+      "fixture": "encrypted_pdf",
+      "use": "Unlock a user-password-protected file.",
+      "assertions": [
+        "unlock_pdf decrypts with the known password",
+        "the unlocked file extracts text successfully",
+        "the marker text is preserved"
+      ]
+    },
+    {
+      "id": "corrupted_pdf",
+      "fixture": "corrupted_pdf",
+      "use": "Detect and repair a damaged file.",
+      "assertions": [
+        "check_repair reports a non-clean status",
+        "repair writes a readable output",
+        "the repaired file still contains the marker text"
+      ]
+    },
+    {
+      "id": "mixed_batch",
+      "fixture": "report_pdf + report_scanned_pdf",
+      "use": "Run batch OCR across a mixed directory.",
+      "assertions": [
+        "batch_ocr processes both inputs",
+        "both OCR outputs are written",
+        "the scanned report becomes searchable"
+      ]
+    },
+    {
+      "id": "publish_packet",
+      "fixture": "dirty_pdf",
+      "use": "Sanitize a metadata-rich file before sharing.",
+      "assertions": [
+        "sanitize removes metadata, attachments, and OpenAction",
+        "the content text layer stays readable",
+        "marker text remains extractable"
+      ]
+    },
+    {
+      "id": "compression_packet",
+      "fixture": "report_scanned_pdf",
+      "use": "Compress a multi-page scanned report.",
+      "assertions": [
+        "compress_pdf writes a valid output",
+        "the page count stays stable",
+        "quality selection stays within the expected ladder"
+      ]
+    },
+    {
+      "id": "form_packet",
+      "fixture": "form_pdf",
+      "use": "Fill a simple AcroForm packet.",
+      "assertions": [
+        "fill_form writes requested field values",
+        "missing stays empty",
+        "filled fields round-trip through pikepdf"
+      ]
+    }
+  ]
+}

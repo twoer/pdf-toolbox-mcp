@@ -204,6 +204,43 @@ def form_pdf(_fixdir: Path, text_pdf: Path) -> Path:
     return out
 
 
+@pytest.fixture(scope="session")
+def low_res_scanned_pdf(_fixdir: Path, text_pdf: Path) -> Path:
+    """低清扫描件：更贴近 OCR 真实输入。"""
+    if not _have("pdftoppm"):
+        pytest.skip("生成低清扫描件样本需要 poppler")
+    out = _fixdir / "low_res_scanned.pdf"
+    if not out.exists():
+        make_scanned_pdf(text_pdf, out, first_page=1, last_page=2, dpi=110)
+    return out
+
+
+@pytest.fixture(scope="session")
+def report_pdf(_fixdir: Path) -> Path:
+    """多页报告样本：用于 batch / compress 等多页回归。"""
+    out = _fixdir / "report.pdf"
+    if not out.exists():
+        make_text_pdf(
+            out,
+            pages=12,
+            paragraphs_per_page=4,
+            marker_repeats=3,
+            title="Quarterly Report",
+        )
+    return out
+
+
+@pytest.fixture(scope="session")
+def report_scanned_pdf(_fixdir: Path, report_pdf: Path) -> Path:
+    """多页扫描报告：用于 OCR / 压缩回归。"""
+    if not _have("pdftoppm"):
+        pytest.skip("生成多页扫描报告需要 poppler")
+    out = _fixdir / "report_scanned.pdf"
+    if not out.exists():
+        make_scanned_pdf(report_pdf, out, first_page=1, last_page=12, dpi=90)
+    return out
+
+
 def make_text_pdf(
     out: Path,
     *,

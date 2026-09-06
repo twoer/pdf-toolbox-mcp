@@ -15,13 +15,14 @@
   "mcpServers": {
     "pdf-toolbox": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
+      "args": ["--from", "pdf-toolbox-mcp", "pdftoolbox"]
     }
   }
 }
 ```
 
 PyPI 项目页：[pdf-toolbox-mcp](https://pypi.org/project/pdf-toolbox-mcp/)
+<!-- mcp-name: io.github.twoer/pdf-toolbox-mcp -->
 
 想要某个客户端的可直接粘贴配置？运行 `uv run pdftoolbox client list` 或 `uv run pdftoolbox client show claude-desktop`。
 Cursor 还可以直接看 `uv run pdftoolbox client show cursor`，会给出 deeplink 版本。
@@ -44,6 +45,12 @@ MCP 第一单任务：
 
 Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，工具返回结构化错误并附安装命令：
 
+想一次装齐全套？
+
+- macOS: `brew install qpdf poppler tesseract tesseract-lang ghostscript`
+- Debian/Ubuntu: `sudo apt install qpdf poppler-utils tesseract-ocr tesseract-ocr-chi-sim ghostscript`
+- Windows: 看下表逐项安装
+
 | 级别 | 二进制 | 解锁 | macOS | Debian/Ubuntu | Windows |
 |---|---|---|---|---|---|
 | L0 | qpdf | 拆合/旋转/加解密 | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
@@ -52,6 +59,13 @@ Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，
 | L3 | ghostscript | 压缩 | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
 
 > Windows 说明：Ghostscript 在 Windows 上的二进制名是 `gswin64c.exe`——探测会自动识别，`compress_pdf` 开箱即用；tesseract 语言包（如 `chi_sim`）需另行下载到其 `tessdata` 目录。
+
+上游 / 参考：
+
+- qpdf：[官网](https://qpdf.sourceforge.io/) · [仓库](https://github.com/qpdf/qpdf)
+- poppler：[官网](https://poppler.freedesktop.org/)
+- tesseract：[仓库](https://github.com/tesseract-ocr/tesseract)
+- ghostscript：[官网](https://ghostscript.com/) · [releases](https://ghostscript.com/releases/)
 
 每个成功返回都带 `_deps` 能力摘要（如 `{"level": 2, "missing": ["gs"]}`）。
 
@@ -111,7 +125,7 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 在 MCP 客户端里直接描述目标即可——agent 会自己串工具，错误契约让它能自路由（比如遇到 `encrypted_pdf` 就先调 `unlock_pdf`）。脱离 MCP 使用时，先定义一次：
 
 ```bash
-PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
+PTX="uvx --from pdf-toolbox-mcp pdftoolbox"
 # PyPI 版：uvx --from pdf-toolbox-mcp pdftoolbox
 ```
 
@@ -161,10 +175,10 @@ $PTX redact-text draft.pdf --query 张三 --query HT-2026-088
 全部能力也可脱离 MCP 使用：
 
 ```bash
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
-uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox probe all
+uvx --from pdf-toolbox-mcp pdftoolbox ocr scan.pdf --lang chi_sim+eng
+uvx --from pdf-toolbox-mcp pdftoolbox unlock locked.pdf --password 'xxx'
+uvx --from pdf-toolbox-mcp pdftoolbox split big.pdf --every-n 10
+uvx --from pdf-toolbox-mcp pdftoolbox probe all
 ```
 
 *（安装 PyPI 版后可直接用 `uvx --from pdf-toolbox-mcp …`。）*
@@ -184,7 +198,9 @@ MIT。系统工具以独立进程聚合调用：poppler (GPL-2.0)、qpdf (Apache
 ## 开发
 
 ```bash
-uv sync --dev && uv run pytest    # 115 个测试，按能力级别自动跳过
+uv sync --dev && uv run pytest -m "not realworld"    # 快测
+uv sync --dev && uv run pytest -m realworld           # 真实世界回归
+uv sync --dev && uv run pytest                        # 全量套件
 uv run pdftoolbox probe all
 uv run pdftoolbox probe all --json   # 结构化依赖快照
 uv run pdftoolbox doctor

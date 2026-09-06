@@ -32,6 +32,6 @@ jobs:
       - name: Sync Python dependencies
         run: uv sync --dev
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run pytest -v -m "not realworld"
       - name: Probe report
         run: uv run pdftoolbox probe all
