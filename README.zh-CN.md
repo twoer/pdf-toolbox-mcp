@@ -24,14 +24,17 @@
 PyPI 项目页：[pdf-toolbox-mcp](https://pypi.org/project/pdf-toolbox-mcp/)
 <!-- mcp-name: io.github.twoer/pdf-toolbox-mcp -->
 
-想要某个客户端的可直接粘贴配置？运行 `uv run pdftoolbox client list` 或 `uv run pdftoolbox client show claude-desktop`。
-Cursor 还可以直接看 `uv run pdftoolbox client show cursor`，会给出 deeplink 版本。
-要生成项目级 `.mcp.json`，运行 `uv run pdftoolbox client show universal`。
-要导出一整套客户端文件，运行 `uv run pdftoolbox client export`。
-要探测当前客户端环境，运行 `uv run pdftoolbox client detect`。
-要半自动安装，运行 `uv run pdftoolbox client install` 或 `uv run pdftoolbox client install --scope auto`。
-如果你正在把现有 Claude Desktop 配置迁到 Claude Code，运行 `uv run pdftoolbox client import-claude-desktop`。
-若要全部导出/安装支持的客户端，再加 `--all`。
+想要某个客户端的可直接粘贴配置？
+
+- 列出客户端：`uv run pdftoolbox client list`
+- Claude Desktop：`uv run pdftoolbox client show claude-desktop`
+- Cursor：`uv run pdftoolbox client show cursor`
+- 项目级 `.mcp.json`：`uv run pdftoolbox client show universal`
+- 导出整套客户端文件：`uv run pdftoolbox client export`
+- 探测当前客户端环境：`uv run pdftoolbox client detect`
+- 半自动安装：`uv run pdftoolbox client install` 或 `uv run pdftoolbox client install --scope auto`
+- 把现有 Claude Desktop 配置迁到 Claude Code：`uv run pdftoolbox client import-claude-desktop`
+- 只有想导出/安装全部支持的客户端时，再加 `--all`
 
 如果你想在第一单任务前先做一次诊断并看依赖快照，运行 `uv run pdftoolbox doctor`；脚本可加 `--json`。它会打印 `available_now`、`starter_action`、`starter_cli`、`starter_tool`，方便你直接跳到当前最适合的第一步。
 

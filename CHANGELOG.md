@@ -3,6 +3,13 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
+## [0.1.4] — 2026-09-06
+
+Docs-only release. README client setup section was reformatted into a compact, copy-friendly list.
+
+### Changed
+- README client setup instructions now render as bullets instead of a dense paragraph
+
 ## [0.1.3] — 2026-09-06
 
 Release 0.1.3. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf + ghostscript).
@@ -29,4 +36,5 @@ Release 0.1.3. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf 
 - 50-file batch: 50/50 success, ~1.6 s/file
 
 [Unreleased]: https://github.com/twoer/pdf-toolbox-mcp/commits/main
+[0.1.4]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.4
 [0.1.3]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.3

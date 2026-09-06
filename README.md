@@ -24,16 +24,19 @@ Add to any MCP client:
 PyPI project page: [pdf-toolbox-mcp](https://pypi.org/project/pdf-toolbox-mcp/)
 <!-- mcp-name: io.github.twoer/pdf-toolbox-mcp -->
 
-Need a paste-ready setup for a specific client? Run `uv run pdftoolbox client list` or `uv run pdftoolbox client show claude-desktop`.
-Cursor users can also use `uv run pdftoolbox client show cursor` for a deeplink-ready setup.
-Run `uv run pdftoolbox client show universal` to generate a project-level `.mcp.json`.
-To export a whole bundle of client files, run `uv run pdftoolbox client export`.
-To detect the current client surface, run `uv run pdftoolbox client detect`.
-For a semi-automatic install, run `uv run pdftoolbox client install` or `uv run pdftoolbox client install --scope auto`.
-If you're moving an existing Claude Desktop setup into Claude Code, run `uv run pdftoolbox client import-claude-desktop`.
-Add `--all` only if you want every supported client bundle.
+Need a paste-ready setup for a specific client?
 
-If you want a one-shot diagnosis and dependency snapshot before your first task, run `uv run pdftoolbox doctor` or `uv run pdftoolbox doctor --json`. It prints `available_now`, `starter_action`, `starter_cli`, and `starter_tool` so you can jump straight to the first supported move.
+- List clients: `uv run pdftoolbox client list`
+- Claude Desktop: `uv run pdftoolbox client show claude-desktop`
+- Cursor: `uv run pdftoolbox client show cursor`
+- Universal project `.mcp.json`: `uv run pdftoolbox client show universal`
+- Export all client files: `uv run pdftoolbox client export`
+- Detect the current client surface: `uv run pdftoolbox client detect`
+- Semi-auto install: `uv run pdftoolbox client install` or `uv run pdftoolbox client install --scope auto`
+- Import an existing Claude Desktop setup into Claude Code: `uv run pdftoolbox client import-claude-desktop`
+- Add `--all` only if you want every supported client bundle
+
+Need a one-shot diagnosis and dependency snapshot before your first task? Run `uv run pdftoolbox doctor` or `uv run pdftoolbox doctor --json`. It prints `available_now`, `starter_action`, `starter_cli`, and `starter_tool` so you can jump straight to the first supported move.
 
 First task:
 - OCR a scan: `uv run pdftoolbox ocr scan.pdf --lang chi_sim+eng`
