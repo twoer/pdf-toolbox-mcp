@@ -1,6 +1,6 @@
 # Cookbook
 
-The [README](../README.md) covers the flagship five (OCR write-back, unlock, redact-by-keyword, merge & protect, compress-to-target). This cookbook walks the rest — same conventions: in an MCP client you just describe the goal and the agent picks the tool; headless, define once:
+Start with `pdftoolbox doctor` / `tool_doctor`, then use the [README](../README.md) for the first three moves (OCR write-back, unlock, redact-by-keyword). This cookbook walks the rest — same conventions: in an MCP client you just describe the goal and the agent picks the tool; headless, define once:
 
 ```bash
 PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
@@ -28,6 +28,27 @@ Before sending a PDF outside, strip everything that isn't content, set proper me
 $PTX sanitize report.pdf
 $PTX meta report_sanitized.pdf --title "Q3 Report" --author "Acme"
 $PTX linearize report_meta.pdf
+```
+
+## Merge and protect
+
+> “Merge `cover.pdf` + `report.pdf` into `annual.pdf`, then protect it: opens with password `k3y`, printing allowed, modification not.”
+
+`merge_pdfs(paths=["cover.pdf", "report.pdf"], output="annual.pdf")` joins files in order; `protect_pdf(user_password="k3y")` writes an AES-256 encrypted copy with permissions you choose. For the common case, keep printing/extraction on and modification off.
+
+```bash
+$PTX merge cover.pdf report.pdf --output annual.pdf
+$PTX protect annual.pdf --user-password 'k3y'
+```
+
+## Compress to target
+
+> “`big.pdf` is 38 MB and the mail cap is 10 MB. Shrink it.”
+
+`compress_pdf(path, target_mb=10)` walks the quality ladder until the output drops under the target. It is lossy, so use it for sharing or email, not archival masters.
+
+```bash
+$PTX compress big.pdf --target-mb 10
 ```
 
 ## Let the model *see* a complex page

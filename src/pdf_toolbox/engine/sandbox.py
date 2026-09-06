@@ -63,6 +63,22 @@ def group_consecutive(pages: list[int]) -> list[tuple[int, int]]:
     return groups
 
 
+def merge_overlapping_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """合并重叠区间，但保留相邻区间：[(1,2),(2,3)]→[(1,3)]，[(1,2),(3,3)] 保持不变。"""
+    if not ranges:
+        return []
+    merged: list[list[int]] = []
+    for start, end in sorted(ranges, key=lambda x: (x[0], x[1])):
+        if not merged:
+            merged.append([start, end])
+            continue
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return [(a, b) for a, b in merged]
+
+
 # ---------------------------------------------------------------------------
 # 路径与写出沙箱（PLAN §6）
 # ---------------------------------------------------------------------------

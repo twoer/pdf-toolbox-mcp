@@ -10,7 +10,13 @@ from pathlib import Path
 
 from .errors import EncryptedPdfError
 from .probe import require
-from .sandbox import assert_readable, check_write, ensure_pdf, parse_pages
+from .sandbox import (
+    assert_readable,
+    check_write,
+    ensure_pdf,
+    merge_overlapping_ranges,
+    parse_pages,
+)
 
 
 def _qpdf(args: list[str]) -> None:
@@ -56,17 +62,18 @@ def split_pdf(
         n = int(every_n)
         if n < 1:
             raise ValueError("every_n 至少为 1")
-        spec = ",".join(
-            f"{a}-{min(a + n - 1, total)}" for a in range(1, total + 1, n)
-        )
+        ranges = [
+            (a, min(a + n - 1, total))
+            for a in range(1, total + 1, n)
+        ]
     else:
-        spec = ranges  # type: ignore[assignment]
+        ranges = merge_overlapping_ranges(parse_pages(ranges, max_pages=total))  # type: ignore[arg-type]
 
     target_dir = Path(out_dir).expanduser().resolve() if out_dir else pdf.parent
     target_dir.mkdir(parents=True, exist_ok=True)
 
     outputs: list[dict] = []
-    for a, b in parse_pages(spec, max_pages=total):
+    for a, b in ranges:
         name = f"{pdf.stem}_p{a}.pdf" if a == b else f"{pdf.stem}_p{a}-{b}.pdf"
         out = _prep_output(target_dir / name, overwrite)
         _qpdf([str(pdf), "--pages", ".", f"{a}-{b}", "--", str(out)])
@@ -110,7 +117,7 @@ def rotate_pages(
     require("qpdf")
     total = _page_count(pdf)
     spec = pages or f"1-{total}"
-    ranges = parse_pages(spec, max_pages=total)
+    ranges = merge_overlapping_ranges(parse_pages(spec, max_pages=total))
     page_spec = ",".join(f"{a}-{b}" if a != b else str(a) for a, b in ranges)
 
     out = Path(output) if output else pdf.with_name(f"{pdf.stem}_rot{angle}.pdf")

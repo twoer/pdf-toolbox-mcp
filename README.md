@@ -2,8 +2,60 @@
 
 [中文文档](https://github.com/twoer/pdf-toolbox-mcp/blob/main/README.zh-CN.md) | Local-first PDF processing for AI agents.
 
+Built for people already using Claude Desktop, Claude Code, Cursor, or another MCP client who want local PDF OCR, unlock, split/merge, render, and compress without uploading files.
+
 **Others help AI *read* PDFs. This one helps AI *process* them** — OCR a scan into a truly searchable file, unlock encrypted PDFs, split/merge/rotate, re-encrypt for sharing. 100% on your machine: no cloud calls, no file uploads, no per-page fees.
 
+## Quick start
+
+Add to any MCP client:
+
+```json
+{
+  "mcpServers": {
+    "pdf-toolbox": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
+    }
+  }
+}
+```
+
+Need a paste-ready setup for a specific client? Run `uv run pdftoolbox client list` or `uv run pdftoolbox client show claude-desktop`.
+Cursor users can also use `uv run pdftoolbox client show cursor` for a deeplink-ready setup.
+Run `uv run pdftoolbox client show universal` to generate a project-level `.mcp.json`.
+To export a whole bundle of client files, run `uv run pdftoolbox client export`.
+To detect the current client surface, run `uv run pdftoolbox client detect`.
+For a semi-automatic install, run `uv run pdftoolbox client install` or `uv run pdftoolbox client install --scope auto`.
+If you're moving an existing Claude Desktop setup into Claude Code, run `uv run pdftoolbox client import-claude-desktop`.
+Add `--all` only if you want every supported client bundle.
+
+If you want a one-shot diagnosis and dependency snapshot before your first task, run `uv run pdftoolbox doctor` or `uv run pdftoolbox doctor --json`. It prints `available_now`, `starter_action`, `starter_cli`, and `starter_tool` so you can jump straight to the first supported move.
+
+First task:
+- OCR a scan: `uv run pdftoolbox ocr scan.pdf --lang chi_sim+eng`
+- Unlock a file: `uv run pdftoolbox unlock locked.pdf --password 'xxx'`
+
+MCP first task:
+1. Ask `tool_doctor`
+2. Then call `tool_ocr_pdf`
+
+*(PyPI package `pdf-toolbox-mcp` is coming; the git install above works today.)*
+
+Python dependencies resolve automatically. System tools are **capability-leveled** — missing ones never crash the server; the tool returns a structured error with the exact install command:
+
+| Level | Binary | Unlocks | macOS | Debian/Ubuntu | Windows |
+|---|---|---|---|---|---|
+| L0 | qpdf | split / merge / rotate / protect / unlock | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
+| L1 | poppler | extract_text / render / info | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` or conda-forge |
+| L2 | tesseract | **ocr_pdf (write-back)** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
+| L3 | ghostscript | compress | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
+
+> Windows note: Ghostscript's binary is `gswin64c.exe` there — the probe detects it automatically, so `compress_pdf` works out of the box. Tesseract language packs (e.g. `chi_sim`) must be downloaded to its `tessdata` folder separately.
+
+Every successful response carries a `_deps` summary (`{"level": 2, "missing": ["gs"]}`) so the agent always knows what's available.
+
+In an MCP session, use `tool_doctor`.
 ## Why another PDF MCP?
 
 The PDF MCP space is crowded — but only on the *reading* side. Based on a [hands-on survey of the ecosystem](docs/competitor-matrix.md) (2026-09):
@@ -22,37 +74,7 @@ Pain points this addresses directly:
 - Claude natively **refuses encrypted PDFs**; ChatGPT reports *"No text could be extracted"* on scans — here, OCR writes a real text layer back into the file, and `unlock_pdf` decrypts with just the user password.
 - Claude Code burns **~30× more tokens** reading a PDF page-as-image than extracting text locally.
 
-## Quick start
-
-Add to any MCP client (Claude Desktop / Claude Code / Cursor / …):
-
-```json
-{
-  "mcpServers": {
-    "pdf-toolbox": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
-    }
-  }
-}
-```
-
-*(PyPI package `pdf-toolbox-mcp` is coming; the git install above works today.)*
-
-Python dependencies resolve automatically. System tools are **capability-leveled** — missing ones never crash the server; the tool returns a structured error with the exact install command:
-
-| Level | Binary | Unlocks | macOS | Debian/Ubuntu | Windows |
-|---|---|---|---|---|---|
-| L0 | qpdf | split / merge / rotate / protect / unlock | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
-| L1 | poppler | extract_text / render / info | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` or conda-forge |
-| L2 | tesseract | **ocr_pdf (write-back)** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
-| L3 | ghostscript | compress | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
-
-> Windows note: Ghostscript's binary is `gswin64c.exe` there — the probe detects it automatically, so `compress_pdf` works out of the box. Tesseract language packs (e.g. `chi_sim`) must be downloaded to its `tessdata` folder separately.
-
-Every successful response carries a `_deps` summary (`{"level": 2, "missing": ["gs"]}`) so the agent always knows what's available.
-
-## Tools (24)
+## Tools (25)
 
 | Tool | What it does | Engine |
 |---|---|---|
@@ -80,6 +102,7 @@ Every successful response carries a `_deps` summary (`{"level": 2, "missing": ["
 | `edit_metadata` | Set/clear Title/Author/… (docinfo + XMP) | pikepdf |
 | `compress_pdf` | Compress, optionally down a quality ladder until hitting `target_mb` | ghostscript |
 | `dependency_status` | Probe system tools + install commands | — |
+| `doctor` | One-shot onboarding check: imports, dependency probe, README paths | — |
 
 **Error contract** (agents self-route): failures return `{"ok": false, "error": "<code>"}` — `missing_dependency` (with `install` per platform), `encrypted_pdf` (hint: call `unlock_pdf` first), `wrong_password`, `output_exists` (explicit overwrite required), `invalid_page_range`, …
 
@@ -124,28 +147,7 @@ Agent: `redact_text(queries=["张三", "HT-2026-088"])` → `draft_redacted.pdf`
 $PTX redact-text draft.pdf --query 张三 --query HT-2026-088
 ```
 
-**4 · Assemble & encrypt for sending**
-
-> “Merge `cover.pdf` + `report.pdf` into `annual.pdf`, then protect it: opens with password `k3y`, printing allowed, modification not.”
-
-Agent: `merge_pdfs(paths=["cover.pdf", "report.pdf"], output="annual.pdf")` → `protect_pdf(user_password="k3y")` (print/extract allowed, modify denied by default) → `annual_locked.pdf`.
-
-```bash
-$PTX merge cover.pdf report.pdf --output annual.pdf
-$PTX protect annual.pdf --user-password 'k3y'
-```
-
-**5 · Fit an email size limit**
-
-> “`big.pdf` is 38 MB and the mail cap is 10 MB. Shrink it.”
-
-Agent: `compress_pdf(path, target_mb=10)` walks the quality ladder (ebook → screen) until under target → `big_compressed.pdf`.
-
-```bash
-$PTX compress big.pdf --target-mb 10
-```
-
-More recipes — batch OCR, the publish-hygiene chain (`sanitize` → `edit_metadata` → `linearize`), vision rendering, locate-and-redact, form filling, damaged-file rescue — in the [cookbook](docs/cookbook.md).
+More recipes — merge & protect, compress-to-target, batch OCR, the publish-hygiene chain (`sanitize` → `edit_metadata` → `linearize`), vision rendering, locate-and-redact, form filling, damaged-file rescue — in the [cookbook](docs/cookbook.md).
 
 ## Configuration
 
@@ -183,8 +185,12 @@ MIT. System tools are invoked as independent processes (aggregation): poppler (G
 
 ```bash
 uv sync --dev          # install
-uv run pytest          # 105 tests; auto-skip by capability level
+uv run pytest          # 115 tests; auto-skip by capability level
 uv run pdftoolbox probe all
+uv run pdftoolbox probe all --json   # structured dependency snapshot
+uv run pdftoolbox doctor
+uv run python tools/onboarding_check.py
+uv run python tools/onboarding_check.py --json
 ```
 
 Cross-platform check without leaving macOS:
@@ -195,7 +201,7 @@ docker run --rm -v "$PWD":/src:ro python:3.12-slim bash -c \
    pip install -q uv && cp -r /src /work && cd /work && uv sync --dev --quiet && uv run pytest -q'
 ```
 
-Roadmap: v0.1.0 ships all 24 tools above. Next up: the PyPI package (drops the git prefix from every command) and hardening against real-world scanned documents. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
+Roadmap: v0.1.0 ships all 25 tools above. Next up: the PyPI package (drops the git prefix from every command) and hardening against real-world scanned documents. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
 
 ## License
 

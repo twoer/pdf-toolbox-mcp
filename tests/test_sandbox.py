@@ -8,6 +8,7 @@ from pdf_toolbox.engine.sandbox import (
     PageRangeError,
     ensure_pdf,
     flatten_pages,
+    merge_overlapping_ranges,
     parse_pages,
 )
 
@@ -50,6 +51,10 @@ class TestParsePages:
 
     def test_flatten(self):
         assert flatten_pages([(1, 3), (5, 5), (2, 2)]) == [1, 2, 3, 5]
+
+    def test_merge_overlapping_ranges(self):
+        assert merge_overlapping_ranges([(1, 2), (2, 3)]) == [(1, 3)]
+        assert merge_overlapping_ranges([(1, 2), (3, 3)]) == [(1, 2), (3, 3)]
 
 
 class TestEnsurePdf:

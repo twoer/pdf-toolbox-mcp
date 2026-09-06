@@ -2,8 +2,60 @@
 
 [English](README.md) | 本地优先的 AI 代理 PDF 处理引擎。
 
+面向已经在用 Claude Desktop、Claude Code、Cursor 或其他 MCP 客户端的人：把 PDF 的 OCR、解锁、拆分合并、渲染和压缩都留在本机，不上传文件。
+
 **别人帮 AI 读 PDF，我们帮 AI 处理 PDF**——扫描件 OCR 写回真正可搜索的文件、解锁加密 PDF、拆分合并旋转、加密分发。100% 本机运行：无云端调用、不上传文件、不按页收费。
 
+## 快速开始
+
+任意 MCP 客户端都可以先接这一段：
+
+```json
+{
+  "mcpServers": {
+    "pdf-toolbox": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
+    }
+  }
+}
+```
+
+想要某个客户端的可直接粘贴配置？运行 `uv run pdftoolbox client list` 或 `uv run pdftoolbox client show claude-desktop`。
+Cursor 还可以直接看 `uv run pdftoolbox client show cursor`，会给出 deeplink 版本。
+要生成项目级 `.mcp.json`，运行 `uv run pdftoolbox client show universal`。
+要导出一整套客户端文件，运行 `uv run pdftoolbox client export`。
+要探测当前客户端环境，运行 `uv run pdftoolbox client detect`。
+要半自动安装，运行 `uv run pdftoolbox client install` 或 `uv run pdftoolbox client install --scope auto`。
+如果你正在把现有 Claude Desktop 配置迁到 Claude Code，运行 `uv run pdftoolbox client import-claude-desktop`。
+若要全部导出/安装支持的客户端，再加 `--all`。
+
+如果你想在第一单任务前先做一次诊断并看依赖快照，运行 `uv run pdftoolbox doctor`；脚本可加 `--json`。它会打印 `available_now`、`starter_action`、`starter_cli`、`starter_tool`，方便你直接跳到当前最适合的第一步。
+
+第一单任务：
+- 扫描件 OCR：`uv run pdftoolbox ocr scan.pdf --lang chi_sim+eng`
+- 解锁文件：`uv run pdftoolbox unlock locked.pdf --password 'xxx'`
+
+MCP 第一单任务：
+1. 先问 `tool_doctor`
+2. 再调 `tool_ocr_pdf`
+
+*（PyPI 包 `pdf-toolbox-mcp` 发布在即；上面的 git 直装今天即可用。）*
+
+Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，工具返回结构化错误并附安装命令：
+
+| 级别 | 二进制 | 解锁 | macOS | Debian/Ubuntu | Windows |
+|---|---|---|---|---|---|
+| L0 | qpdf | 拆合/旋转/加解密 | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
+| L1 | poppler | 文本提取/渲染/元信息 | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` 或 conda-forge |
+| L2 | tesseract | **OCR 写回** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
+| L3 | ghostscript | 压缩 | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
+
+> Windows 说明：Ghostscript 在 Windows 上的二进制名是 `gswin64c.exe`——探测会自动识别，`compress_pdf` 开箱即用；tesseract 语言包（如 `chi_sim`）需另行下载到其 `tessdata` 目录。
+
+每个成功返回都带 `_deps` 能力摘要（如 `{"level": 2, "missing": ["gs"]}`）。
+
+在 MCP 会话里用 `tool_doctor`。
 ## 为什么又做一个 PDF MCP？
 
 PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调研](docs/competitor-matrix.md)（2026-09）：
@@ -22,37 +74,7 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 - Claude 原生**直接拒绝加密 PDF**；ChatGPT 对扫描件报 *"No text could be extracted"*——这里 OCR 会把真正的文本层写回文件，`unlock_pdf` 只用 user（打开）密码即可解锁。
 - Claude Code 按页渲染读 PDF 比本地提取文本**多烧约 30 倍 token**。
 
-## 快速开始
-
-任意 MCP 客户端（Claude Desktop / Claude Code / Cursor…）：
-
-```json
-{
-  "mcpServers": {
-    "pdf-toolbox": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/twoer/pdf-toolbox-mcp", "pdf-toolbox-mcp"]
-    }
-  }
-}
-```
-
-*（PyPI 包 `pdf-toolbox-mcp` 发布在即；上面的 git 直装今天即可用。）*
-
-Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，工具返回结构化错误并附安装命令：
-
-| 级别 | 二进制 | 解锁 | macOS | Debian/Ubuntu | Windows |
-|---|---|---|---|---|---|
-| L0 | qpdf | 拆合/旋转/加解密 | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
-| L1 | poppler | 文本提取/渲染/元信息 | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` 或 conda-forge |
-| L2 | tesseract | **OCR 写回** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
-| L3 | ghostscript | 压缩 | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
-
-> Windows 说明：Ghostscript 在 Windows 上的二进制名是 `gswin64c.exe`——探测会自动识别，`compress_pdf` 开箱即用；tesseract 语言包（如 `chi_sim`）需另行下载到其 `tessdata` 目录。
-
-每个成功返回都带 `_deps` 能力摘要（如 `{"level": 2, "missing": ["gs"]}`）。
-
-## 工具（24 个）
+## 工具（25 个）
 
 | 工具 | 功能 | 引擎 |
 |---|---|---|
@@ -80,6 +102,7 @@ Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，
 | `edit_metadata` | 设置/清空 Title/Author 等（docinfo+XMP 双写） | pikepdf |
 | `compress_pdf` | 压缩，可沿档位阶梯下探到目标大小 | ghostscript |
 | `dependency_status` | 依赖探测 + 安装命令 | — |
+| `doctor` | 一键新用户自检：导入、依赖探测、README 路径 | — |
 
 **错误契约**（agent 自路由）：失败统一返回 `{"ok": false, "error": "<code>"}`——`missing_dependency`（带各平台 `install`）、`encrypted_pdf`（提示先 `unlock_pdf`）、`wrong_password`、`output_exists`（需显式 overwrite）、`invalid_page_range` 等。
 
@@ -124,28 +147,7 @@ Agent：`redact_text(queries=["张三", "HT-2026-088"])` → `draft_redacted.pdf
 $PTX redact-text draft.pdf --query 张三 --query HT-2026-088
 ```
 
-**4 · 合并 + 加密分发**
-
-> “把 `cover.pdf` 和 `report.pdf` 合并成 `annual.pdf`，再加密码 `k3y`：能打开、能打印，但不能修改。”
-
-Agent：`merge_pdfs(paths=["cover.pdf", "report.pdf"], output="annual.pdf")` → `protect_pdf(user_password="k3y")`（默认可打印可复制、不可修改）→ `annual_locked.pdf`。
-
-```bash
-$PTX merge cover.pdf report.pdf --output annual.pdf
-$PTX protect annual.pdf --user-password 'k3y'
-```
-
-**5 · 压到邮件附件上限内**
-
-> “`big.pdf` 有 38 MB，邮箱限 10 MB，帮我压下去。”
-
-Agent：`compress_pdf(path, target_mb=10)` 沿质量阶梯（ebook → screen）下探直到达标 → `big_compressed.pdf`。
-
-```bash
-$PTX compress big.pdf --target-mb 10
-```
-
-更多菜谱——批量 OCR、发布流水线（`sanitize` → `edit_metadata` → `linearize`）、视觉看页、定位+区域涂黑、表单填写、损坏文件抢救——见 [cookbook](docs/cookbook.md)（英文）。
+更多菜谱——合并+加密分发、压缩到目标大小、批量 OCR、发布流水线（`sanitize` → `edit_metadata` → `linearize`）、视觉看页、定位+区域涂黑、表单填写、损坏文件抢救——见 [cookbook](docs/cookbook.md)（英文）。
 
 ## 配置
 
@@ -182,11 +184,15 @@ MIT。系统工具以独立进程聚合调用：poppler (GPL-2.0)、qpdf (Apache
 ## 开发
 
 ```bash
-uv sync --dev && uv run pytest    # 105 个测试，按能力级别自动跳过
+uv sync --dev && uv run pytest    # 115 个测试，按能力级别自动跳过
 uv run pdftoolbox probe all
+uv run pdftoolbox probe all --json   # 结构化依赖快照
+uv run pdftoolbox doctor
+uv run python tools/onboarding_check.py
+uv run python tools/onboarding_check.py --json
 ```
 
-路线图：v0.1.0 已交付上表全部 24 个工具。下一步：PyPI 包（所有命令可去掉 git 前缀）、真实扫描件加固。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
+路线图：v0.1.0 已交付上表全部 25 个工具。下一步：PyPI 包（所有命令可去掉 git 前缀）、真实扫描件加固。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
 
 ## 许可证
 

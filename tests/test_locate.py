@@ -19,6 +19,16 @@ class TestLocateText:
         for m in result["matches"]:
             assert m["x"] >= 0 and m["w"] > 0 and m["h"] > 0
 
+    def test_sparse_page_range(self, text_pdf):
+        result = locate_text(text_pdf, MARKER, pages="1,3")
+        assert result["count"] == 2
+        assert [m["page"] for m in result["matches"]] == [1, 3]
+
+    def test_overlap_page_range_dedup(self, text_pdf):
+        result = locate_text(text_pdf, MARKER, pages="1-2,2-3")
+        assert result["count"] == 3
+        assert [m["page"] for m in result["matches"]] == [1, 2, 3]
+
     def test_cross_word_match(self, text_pdf):
         result = locate_text(text_pdf, "quick brown")
         assert result["count"] == 3

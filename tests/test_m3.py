@@ -44,6 +44,12 @@ class TestLinearize:
 @requires_poppler
 @requires_tesseract
 class TestBatchOcr:
+    def test_single_file_low(self, scanned_pdf, tmp_path):
+        result = batch_ocr([scanned_pdf], lang="eng", out_dir=tmp_path, overwrite=True)
+        assert result["total"] == 1
+        assert result["succeeded"] == 1
+        assert result["failed"] == 0
+
     def test_mixed_batch(self, text_pdf, scanned_pdf, tmp_path):
         result = batch_ocr(
             [text_pdf, scanned_pdf], lang="eng", out_dir=tmp_path, overwrite=True
@@ -82,6 +88,30 @@ class TestBatchOcr:
         assert result["total"] == 2
         assert result["succeeded"] == 2
         assert (out / "a_ocr.pdf").exists()
+
+    def test_retry_recovers(self, scanned_pdf, tmp_path, monkeypatch):
+        import pdf_toolbox.engine.batch as batch_mod
+
+        calls = {"count": 0}
+        real_ocr = batch_mod.ocr_pdf
+
+        def flaky(*args, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise RuntimeError("transient")
+            return real_ocr(*args, **kwargs)
+
+        monkeypatch.setattr(batch_mod, "ocr_pdf", flaky)
+        result = batch_ocr(
+            [scanned_pdf],
+            lang="eng",
+            out_dir=tmp_path,
+            overwrite=True,
+            max_retries=1,
+        )
+        assert result["total"] == 1
+        assert result["succeeded"] == 1
+        assert result["results"][0]["attempts"] == 2
 
     def test_empty_input(self, tmp_path):
         with pytest.raises(ValueError):

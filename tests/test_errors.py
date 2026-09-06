@@ -75,7 +75,12 @@ class TestGuardContract:
         import pdf_toolbox.engine.pages as pages_mod
 
         def _boom(*a, **k):
-            raise MissingDependencyError("qpdf", 0, {"darwin": "brew install qpdf"})
+            raise MissingDependencyError(
+                "qpdf",
+                0,
+                {"darwin": "brew install qpdf"},
+                unlocks=("split_pdf", "merge_pdfs"),
+            )
 
         monkeypatch.setattr(pages_mod, "require", _boom)
         data = _call(
@@ -86,6 +91,7 @@ class TestGuardContract:
         assert data["error"] == "missing_dependency"
         assert data["binary"] == "qpdf"
         assert "brew install qpdf" in data["install"]["darwin"]
+        assert data["unlocks"] == ["split_pdf", "merge_pdfs"]
 
     def test_unknown_exception_still_structured(self, text_pdf, monkeypatch):  # noqa: F811
         import pdf_toolbox.engine.meta as meta_mod

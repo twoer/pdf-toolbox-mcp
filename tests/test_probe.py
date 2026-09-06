@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import json
+
+from typer.testing import CliRunner
+
+from pdf_toolbox.cli import app
 from pdf_toolbox.engine.probe import (
     SPEC,
     Dependency,
     capability_level,
     find_binary,
     probe_all,
+    probe_snapshot,
 )
 
 
@@ -41,8 +47,28 @@ class TestProbe:
             assert isinstance(dep, Dependency)
             assert dep.found is True or dep.install  # 缺失时必须给安装命令
             d = dep.as_dict()
-            assert set(d) == {"name", "level", "found", "version", "install", "error"}
+            assert set(d) == {"name", "level", "found", "version", "install", "unlocks", "error"}
+            assert isinstance(d["unlocks"], list)
 
     def test_capability_level_bounds(self):
         level = capability_level()
         assert -1 <= level <= 3
+
+    def test_probe_snapshot_structure(self):
+        snapshot = probe_snapshot()
+        assert set(snapshot) == {"capability_level", "missing", "dependencies"}
+        assert isinstance(snapshot["dependencies"], list)
+        assert isinstance(snapshot["missing"], list)
+        assert -1 <= snapshot["capability_level"] <= 3
+
+
+class TestProbeCli:
+    def test_probe_all_json(self):
+        runner = CliRunner()
+        result = runner.invoke(app, ["probe", "all", "--json"])
+        assert result.exit_code == 0
+        snapshot = json.loads(result.output)
+        assert set(snapshot) == {"capability_level", "missing", "dependencies"}
+        deps = snapshot["dependencies"]
+        assert isinstance(deps, list)
+        assert {d["name"] for d in deps} == {"qpdf", "pdfinfo", "tesseract", "gs"}

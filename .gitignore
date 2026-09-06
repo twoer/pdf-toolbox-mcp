@@ -28,3 +28,8 @@ PDF-Toolbox/
 # 本地私有材料（发版清单、教程草稿）与本机工具配置
 notes/
 opencode.json
+docs/plans/
+.cursor/
+.zed/
+client-bundles/
+.mcp.json

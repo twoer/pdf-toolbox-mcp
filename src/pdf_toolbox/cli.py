@@ -10,6 +10,13 @@ from pathlib import Path
 import typer
 
 from . import __version__
+from .client_install import (
+    default_install_target,
+    detect_client_environment,
+    import_from_claude_desktop,
+    install_client,
+)
+from .client_setup import build_client_setup, export_client_bundle, render_client_list
 from .engine import (
     batch_ocr,
     check_repair,
@@ -35,7 +42,8 @@ from .engine import (
     split_pdf,
     unlock_pdf,
 )
-from .engine.probe import probe_all
+from .engine.probe import probe_all, probe_snapshot
+from .onboarding import format_report, report_checks
 
 
 def _ensure_utf8_stdio() -> None:
@@ -53,7 +61,9 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 probe_app = typer.Typer(help="依赖探测")
+client_app = typer.Typer(help="客户端接入片段")
 app.add_typer(probe_app, name="probe")
+app.add_typer(client_app, name="client")
 
 
 def _echo(result: dict) -> None:
@@ -327,13 +337,117 @@ def compress(
 
 
 @probe_app.command("all")
-def probe() -> None:
+def probe(json_output: bool = typer.Option(False, "--json", help="以 JSON 输出诊断结果")) -> None:
     """探测系统依赖与能力级别"""
-    for dep in probe_all():
+    if json_output:
+        typer.echo(json.dumps(probe_snapshot(), ensure_ascii=False, indent=2, default=str))
+        raise typer.Exit(0)
+    deps = probe_all()
+    for dep in deps:
         mark = "✅" if dep.found else "❌"
         typer.echo(f"{mark} L{dep.level} {dep.name:10s} {dep.version or ''}")
+        if dep.unlocks:
+            typer.echo(f"      unlocks: {', '.join(dep.unlocks)}")
         if not dep.found:
             typer.echo(f"      install: {dep.install}")
+
+
+@client_app.command("list")
+def client_list() -> None:
+    """列出支持的客户端接入片段。"""
+    for line in render_client_list():
+        typer.echo(line)
+
+
+@client_app.command("show")
+def client_show(
+    name: str = typer.Argument(..., help="claude-desktop / claude-code / zed / generic-json / chatgpt"),
+    json_output: bool = typer.Option(False, "--json", help="以 JSON 输出接入片段"),
+) -> None:
+    """输出单个客户端的接入配置或命令。"""
+    try:
+        setup = build_client_setup(name)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if json_output:
+        typer.echo(json.dumps(setup.to_dict(), ensure_ascii=False, indent=2, default=str))
+        raise typer.Exit(0)
+    typer.echo(setup.render_text())
+
+
+@client_app.command("detect")
+def client_detect(json_output: bool = typer.Option(False, "--json", help="以 JSON 输出探测结果")) -> None:
+    """探测当前环境里的客户端痕迹与推荐目标。"""
+    report = detect_client_environment()
+    if json_output:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2, default=str))
+        raise typer.Exit(0)
+    typer.echo(f"project_root: {report['project_root'] or '-'}")
+    typer.echo(f"scope: {report['scope']}")
+    typer.echo(f"recommended: {report['recommended']}")
+    for client in report["clients"]:
+        mark = "OK  " if client["present"] else "MISS"
+        paths = ", ".join(client["paths"]) if client["paths"] else "-"
+        typer.echo(f"{mark} {client['name']:14s} {client['detail']}")
+        typer.echo(f"      paths: {paths}")
+
+
+@client_app.command("export")
+def client_export(
+    out_dir: Path = typer.Option(Path("client-bundles"), help="输出目录"),
+    client: list[str] | None = typer.Option(None, "--client", help="导出指定客户端，可重复"),
+    overwrite: bool = typer.Option(False, help="覆盖已有文件"),
+) -> None:
+    """导出一整套客户端接入文件。"""
+    try:
+        written = export_client_bundle(out_dir, clients=client, overwrite=overwrite)
+    except FileExistsError as exc:
+        raise typer.BadParameter(f"目标文件已存在：{exc}") from exc
+    for path in written:
+        typer.echo(str(path))
+
+
+@client_app.command("install")
+def client_install(
+    client: list[str] | None = typer.Option(None, "--client", help="安装指定客户端，可重复"),
+    scope: str = typer.Option("auto", help="auto / user / project"),
+    all_clients: bool = typer.Option(False, "--all", help="安装全部支持的客户端"),
+    overwrite: bool = typer.Option(False, help="覆盖已有配置"),
+) -> None:
+    """半自动安装客户端配置。默认按当前环境挑一个推荐目标。"""
+    if client:
+        targets = client
+    elif all_clients:
+        targets = ["universal", "claude-code", "cursor", "zed", "claude-desktop"]
+    else:
+        report = detect_client_environment()
+        targets = [default_install_target(report)]
+    for name in targets:
+        result = install_client(name, scope=scope, overwrite=overwrite)
+        typer.echo(result.render_text())
+        if result.status in {"failed", "conflict"}:
+            raise typer.Exit(1)
+
+
+@client_app.command("import-claude-desktop")
+def client_import_claude_desktop() -> None:
+    """从 Claude Desktop 配置导入到 Claude Code。"""
+    result = import_from_claude_desktop()
+    typer.echo(result.render_text())
+    if result.status == "failed":
+        raise typer.Exit(1)
+
+
+@app.command()
+def doctor(json_output: bool = typer.Option(False, "--json", help="以 JSON 输出诊断结果")) -> None:
+    """一键诊断：导入、依赖快照、README 关键路径。"""
+    report = report_checks()
+    if json_output:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2, default=str))
+        raise typer.Exit(0 if report["ok"] else 1)
+    for line in format_report(report):
+        typer.echo(line)
+    raise typer.Exit(0 if report["ok"] else 1)
 
 
 @app.command()

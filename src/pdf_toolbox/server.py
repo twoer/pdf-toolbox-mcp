@@ -1,7 +1,7 @@
 """pdf-toolbox-mcp server：FastMCP stdio 薄壳。
 
 工具 = P1a 五件（info / extract_text / ocr_pdf / render_pages / unlock_pdf）
-     + P1b 四件（split / merge / rotate / protect）+ dependency_status。
+     + P1b 四件（split / merge / rotate / protect）+ dependency_status + doctor。
 
 _guard 约定（PLAN §5）：
 - 成功：engine dict 原样返回 + `_deps` 能力摘要（{"level": N, "missing": [...]}）
@@ -39,6 +39,7 @@ from .engine import (
 from .engine.errors import ToolboxError
 from .engine.probe import deps_summary, probe_all
 from .engine.sandbox import PageRangeError
+from .onboarding import report_checks
 
 try:
     from fastmcp import FastMCP
@@ -77,7 +78,7 @@ mcp = FastMCP(
         "复杂版面/图表用 render_pages(return_images=True) 直接看图；"
         "加密文件先 unlock_pdf（user 密码即可）再走其他工具；"
         "对外分发用 protect_pdf。返回带 ok:false 时按 error 字段自路由："
-        "missing_dependency→看 install 字段装依赖；encrypted_pdf→先 unlock_pdf。"
+        "missing_dependency→看 install/unlocks 字段装依赖；encrypted_pdf→先 unlock_pdf。"
     ),
 )
 
@@ -373,8 +374,14 @@ def tool_compress_pdf(
 
 @mcp.tool
 def tool_dependency_status() -> list[dict]:
-    """探测系统依赖（qpdf/poppler/tesseract/ghostscript）与安装命令。工具报 missing_dependency 时先看这里。"""
+    """探测系统依赖（qpdf/poppler/tesseract/ghostscript）、安装命令与可解锁工具。工具报 missing_dependency 时先看这里。"""
     return [d.as_dict() for d in probe_all()]
+
+
+@mcp.tool
+def tool_doctor() -> dict:
+    """一键诊断：导入、依赖快照、README 关键路径。"""
+    return report_checks()
 
 
 def main() -> None:

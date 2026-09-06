@@ -17,11 +17,19 @@ class MissingDependencyError(ToolboxError):
 
     error_code = "missing_dependency"
 
-    def __init__(self, binary: str, level: int, install: dict[str, str]):
+    def __init__(
+        self,
+        binary: str,
+        level: int,
+        install: dict[str, str],
+        unlocks: tuple[str, ...] = (),
+    ):
         self.binary = binary
         self.level = level
         self.install = install
-        super().__init__(f"缺少系统依赖 {binary}（L{level}），安装命令见 install 字段")
+        self.unlocks = unlocks
+        unlocked = f"；安装后可用: {', '.join(unlocks)}" if unlocks else ""
+        super().__init__(f"缺少系统依赖 {binary}（L{level}）{unlocked}")
 
     def as_dict(self) -> dict:
         return {
@@ -30,6 +38,7 @@ class MissingDependencyError(ToolboxError):
             "binary": self.binary,
             "level": self.level,
             "install": self.install,
+            "unlocks": list(self.unlocks),
             "message": str(self),
         }
 

@@ -62,7 +62,7 @@ def fill_form(
             if name in fields:
                 value = fields[name]
                 if isinstance(value, bool):
-                    field.V = pikepdf.Name("Yes") if value else pikepdf.Name.Off
+                    field.V = pikepdf.Name.Yes if value else pikepdf.Name.Off
                     field.AS = field.V
                 else:
                     field.V = str(value)

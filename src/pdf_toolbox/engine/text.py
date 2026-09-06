@@ -84,12 +84,11 @@ def _norm_for_match(s: str) -> str:
     return "".join(_unicodedata.normalize("NFKC", s).split())
 
 
-def _bbox_words(pdf: Path, pages: list[tuple[int, int]] | None) -> list[dict]:
+def _bbox_words(pdf: Path, page_range: tuple[int, int] | None) -> list[dict]:
     """运行 pdftotext -bbox，返回按页分组的词列表（坐标为 PDF 点、左上原点）。"""
     cmd = ["pdftotext", "-bbox", "-enc", "UTF-8"]
-    if pages:
-        first = min(a for a, _ in pages)
-        last = max(b for _, b in pages)
+    if page_range is not None:
+        first, last = page_range
         cmd += ["-f", str(first), "-l", str(last)]
     cmd += [str(pdf), "-"]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
@@ -131,54 +130,56 @@ def locate_text(
 
     total = _page_count(pdf)
     ranges = parse_pages(pages, max_pages=total) if pages else [(1, total)]
-    page_offset = min(a for a, _ in ranges)
+    unique = flatten_pages(ranges)
+    ranges = group_consecutive(unique)
 
     needle = _norm_for_match(query)
     if not needle:
         raise ValueError("query 归一化后为空")
 
-    pages_data = _bbox_words(pdf, ranges)
     matches: list[dict] = []
-    for pi, page in enumerate(pages_data):
-        page_no = page_offset + pi
-        # 按行聚类（yMin 相近 ±2pt），匹配只发生在行内——避免跨行的错误联合框
-        lines: list[list[dict]] = []
-        for w in page["words"]:
-            if lines and abs(w["y"] - lines[-1][0]["y"]) <= 2.0:
-                lines[-1].append(w)
-            else:
-                lines.append([w])
-        for line in lines:
-            hay = ""
-            char_map: list[int] = []  # hay 中每个字符 → line 中的词下标
-            for wi, w in enumerate(line):
-                norm = _norm_for_match(w["text"])
-                hay += norm
-                char_map.extend([wi] * len(norm))
-            start = 0
-            while True:
-                idx = hay.find(needle, start)
-                if idx < 0:
-                    break
-                w_lo, w_hi = char_map[idx], char_map[idx + len(needle) - 1]
-                span = line[w_lo : w_hi + 1]
-                x = min(s["x"] for s in span)
-                y = min(s["y"] for s in span)
-                x2 = max(s["x2"] for s in span)
-                y2 = max(s["y2"] for s in span)
-                snippet = "".join(_norm_for_match(s["text"]) for s in line)[
-                    max(0, idx - 10) : idx + len(needle) + 10
-                ]
-                matches.append(
-                    {
-                        "page": page_no,
-                        "text": query,
-                        "x": round(x, 2), "y": round(y, 2),
-                        "w": round(x2 - x, 2), "h": round(y2 - y, 2),
-                        "context": snippet,
-                    }
-                )
-                if len(matches) >= max_results:
-                    return {"path": str(pdf), "query": query, "count": len(matches), "matches": matches}
-                start = idx + len(needle)
+    for a, b in ranges:
+        pages_data = _bbox_words(pdf, (a, b))
+        for pi, page in enumerate(pages_data):
+            page_no = a + pi
+            # 按行聚类（yMin 相近 ±2pt），匹配只发生在行内——避免跨行的错误联合框
+            lines: list[list[dict]] = []
+            for w in page["words"]:
+                if lines and abs(w["y"] - lines[-1][0]["y"]) <= 2.0:
+                    lines[-1].append(w)
+                else:
+                    lines.append([w])
+            for line in lines:
+                hay = ""
+                char_map: list[int] = []  # hay 中每个字符 → line 中的词下标
+                for wi, w in enumerate(line):
+                    norm = _norm_for_match(w["text"])
+                    hay += norm
+                    char_map.extend([wi] * len(norm))
+                start = 0
+                while True:
+                    idx = hay.find(needle, start)
+                    if idx < 0:
+                        break
+                    w_lo, w_hi = char_map[idx], char_map[idx + len(needle) - 1]
+                    span = line[w_lo : w_hi + 1]
+                    x = min(s["x"] for s in span)
+                    y = min(s["y"] for s in span)
+                    x2 = max(s["x2"] for s in span)
+                    y2 = max(s["y2"] for s in span)
+                    snippet = "".join(_norm_for_match(s["text"]) for s in line)[
+                        max(0, idx - 10) : idx + len(needle) + 10
+                    ]
+                    matches.append(
+                        {
+                            "page": page_no,
+                            "text": query,
+                            "x": round(x, 2), "y": round(y, 2),
+                            "w": round(x2 - x, 2), "h": round(y2 - y, 2),
+                            "context": snippet,
+                        }
+                    )
+                    if len(matches) >= max_results:
+                        return {"path": str(pdf), "query": query, "count": len(matches), "matches": matches}
+                    start = idx + len(needle)
     return {"path": str(pdf), "query": query, "count": len(matches), "matches": matches}
