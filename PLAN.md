@@ -2,7 +2,7 @@
 
 > 本地、免费、隐私优先的 PDF 处理 MCP server —— OCRmyPDF + Poppler + qpdf 重引擎封装
 >
-> 状态：**工程完成，待发布**（2026-09-06 终态，见 §13）｜ 历史：v1.2 定位修正（读向拥挤→处理管线）；v1.1 M-1 验证闸门
+> 状态：**工程完成，待发布 v0.1.5**（2026-09-07，见 §13）｜ 历史：v1.2 定位修正（读向拥挤→处理管线）；v1.1 M-1 验证闸门
 >
 > v1.2 变更：第二轮调研修正定位——读取向已拥挤（Citra 916★ 等），差异化收窄为"处理/输出管线"；卡位表、M-1a 状态同步更新（证据：docs/competitor-matrix.md）
 > v1.1 变更：新增 M-1 验证阶段与修正版里程碑；M1 收缩为 P1a 四工具；P1 拆分为 P1a/P1b 两批；M-1 通过标准对齐 RESEARCH.md §6 门槛
@@ -224,7 +224,7 @@ pdf-toolbox-mcp/
 | M-1c 客户端 PoC | 目标 MCP 客户端调用 OCR、文本和图片返回 | 0.5 天 | 三个真实场景端到端完成 |
 | M-1d 样本评估 | 5–10 份脱敏中文 PDF，记录质量、耗时和失败原因 | 0.5 天 | 按 RESEARCH.md §6 四条继续门槛判定（两平台 10 分钟安装 / OCR 准确率达标 / 核心任务成功率 ≥80% / 无高危缺陷），数据写入验收记录并给出继续/终止结论 |
 
-> **进度（2026-09-05，详见 [docs/m1-record.md](docs/m1-record.md)）**：M-1b ✅（macOS 本机 + Linux docker 两平台，OCR 写回闭环成立）；M-1c ✅ 协议层（mcp_probe 对自家 server 全通），真实客户端验收待配置；M-1d ⏳ 待中文样本与 chi_sim 语言包，不阻塞 M0。
+> **进度（2026-09-07，详见 [docs/m1-record.md](docs/m1-record.md)）**：M-1b ✅（macOS 本机 + Linux docker 两平台，OCR 写回闭环成立）；M-1c ✅ 协议层（mcp_probe 对自家 server 全通），真实客户端验收待网络恢复；M-1d 🟡 合成样本预演完成，正式验收仍待 5–10 份真实中文样本，不阻塞工程里程碑但阻塞 M2 发布。
 
 M-1 未通过时，不扩展 P2/P3；优先解决依赖分发、协议返回类型和 OCR 质量问题。
 
@@ -260,13 +260,13 @@ M-1 未通过时，不扩展 P2/P3；优先解决依赖分发、协议返回类�
 
 工程侧全部完成，项目进入发布运营阶段：
 
-- ✅ **全部里程碑**：M-1a（竞品桌面+实测）/ M-1b（引擎两平台）/ M-1c（协议层；真实客户端验收等 API 代理恢复，命令留档 m1-record）/ M-1d（合成样本预演：干净 99%/倾斜 94%/噪点 81%）/ M0（骨架+CI+LICENSE）/ M1（P1a+P1b+结构化错误）/ M2（材料+建仓+CI 三平台）/ M3（P2 七工具）/ M4（P3 五工具+真涂黑）
+- ✅ **工程里程碑**：M-1a（竞品桌面+实测）/ M-1b（引擎两平台）/ M-1c（协议层；真实客户端验收等网络恢复，命令留档 m1-record）/ M-1d（合成样本预演：干净 99%/倾斜 94%/噪点 81%，正式版待真实样本）/ M0（骨架+CI+LICENSE）/ M1（P1a+P1b+结构化错误）/ M2（材料+建仓+CI 三平台）/ M3（P2 七工具）/ M4（P3 五工具+真涂黑）
 - ✅ **超额项**：Windows 全量 CI（choco 真装四依赖）、redact 选择性光栅化升级、locate_text/redact_text 按内容涂黑、ruff 门禁、PyPI trusted publishing 流水线、git 直装路径实测、中文 OCR 基准与 50 文件压测
-- **终态规模**：24 工具 / 105 测试 / 三平台 CI 全绿 / 双语 README / CHANGELOG / CONTRIBUTING / SECURITY / issue 模板
+- **终态规模**：25 工具 / 244 个普通测试（另有 7 个 realworld 测试）/ 三平台 CI 全绿 / 双语 README / CHANGELOG / CONTRIBUTING / SECURITY / issue 模板
 - **风险表**：唯一"高风险"项（Windows 安装摩擦）已降级为已缓解
 
 **剩余事项（全部需仓库所有者操作，清单存于本地 `notes/launch-checklist.md`，未入库）**：
-1. PyPI：pypi.org 注册 pending publisher（owner=twoer, repo=pdf-toolbox-mcp, workflow=release.yml）→ `git tag v0.1.0 && git push --tags`
+1. PyPI：pypi.org 注册 pending publisher（owner=twoer, repo=pdf-toolbox-mcp, workflow=release.yml）→ `git tag v0.1.5 && git push --tags`
 2. M-1c 真实客户端验收：API 代理恢复后跑 m1-record 留档命令
 3. M-1d 正式版：5–10 份真实脱敏中文样本复核
 4. 目录站提交（六站文案已备）+ 教程投放（草稿+配图清单已备）

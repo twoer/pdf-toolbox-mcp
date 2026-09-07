@@ -12,6 +12,7 @@ from .errors import EncryptedPdfError
 from .probe import require
 from .sandbox import (
     assert_readable,
+    atomic_output,
     check_write,
     ensure_pdf,
     merge_overlapping_ranges,
@@ -42,6 +43,12 @@ def _prep_output(out: Path, overwrite: bool) -> Path:
     if out.exists() and not overwrite:
         raise FileExistsError(f"输出已存在（overwrite=True 才覆盖）: {out}")
     return out
+
+
+def _qpdf_atomic(args: list[str], out: Path, overwrite: bool) -> None:
+    """运行 qpdf 到临时文件，成功后原子替换目标。args 最后一项必须是输出路径。"""
+    with atomic_output(out, overwrite) as tmp:
+        _qpdf([*args[:-1], str(tmp)])
 
 
 def split_pdf(
@@ -76,7 +83,7 @@ def split_pdf(
     for a, b in ranges:
         name = f"{pdf.stem}_p{a}.pdf" if a == b else f"{pdf.stem}_p{a}-{b}.pdf"
         out = _prep_output(target_dir / name, overwrite)
-        _qpdf([str(pdf), "--pages", ".", f"{a}-{b}", "--", str(out)])
+        _qpdf_atomic([str(pdf), "--pages", ".", f"{a}-{b}", "--", str(out)], out, overwrite)
         outputs.append(
             {"file": str(out), "pages": f"{a}-{b}", "page_count": b - a + 1}
         )
@@ -95,7 +102,7 @@ def merge_pdfs(
     docs = [assert_readable(ensure_pdf(Path(p))) for p in paths]
     require("qpdf")
     out = _prep_output(Path(output), overwrite)
-    _qpdf(["--empty", "--pages", *[str(d) for d in docs], "--", str(out)])
+    _qpdf_atomic(["--empty", "--pages", *[str(d) for d in docs], "--", str(out)], out, overwrite)
     return {
         "inputs": [str(d) for d in docs],
         "output": str(out),
@@ -122,7 +129,7 @@ def rotate_pages(
 
     out = Path(output) if output else pdf.with_name(f"{pdf.stem}_rot{angle}.pdf")
     out = _prep_output(out, overwrite)
-    _qpdf([str(pdf), f"--rotate=+{angle}:{page_spec}", "--", str(out)])
+    _qpdf_atomic([str(pdf), f"--rotate=+{angle}:{page_spec}", "--", str(out)], out, overwrite)
     return {
         "input": str(pdf),
         "output": str(out),
@@ -167,11 +174,12 @@ def check_repair(
         out = _prep_output(out, overwrite)
         # 修复读入：不同 qpdf 版本对"警告级恢复"的退出码不一致，
         # 以产物有效性为准（能被 pikepdf 打开即恢复成功），退出信息作为警告保留
-        proc = subprocess.run(
-            ["qpdf", str(pdf), "--", str(out)], capture_output=True, text=True, timeout=300
-        )
-        if not out.exists():
-            raise RuntimeError(f"修复失败（无产物）: {(proc.stderr or proc.stdout).strip()[:300]}")
+        with atomic_output(out, overwrite) as tmp:
+            proc = subprocess.run(
+                ["qpdf", str(pdf), "--", str(tmp)], capture_output=True, text=True, timeout=300
+            )
+            if proc.returncode != 0 and not tmp.exists():
+                raise RuntimeError(f"修复失败（无产物）: {(proc.stderr or proc.stdout).strip()[:300]}")
         try:
             result["repair_page_count"] = _page_count(out)
         except Exception as exc:
@@ -197,7 +205,7 @@ def linearize(
     require("qpdf")
     out = Path(output) if output else pdf.with_name(f"{pdf.stem}_fast.pdf")
     out = _prep_output(out, overwrite)
-    _qpdf(["--linearize", str(pdf), "--", str(out)])
+    _qpdf_atomic(["--linearize", str(pdf), "--", str(out)], out, overwrite)
     proc = subprocess.run(
         ["qpdf", "--check", str(out)], capture_output=True, text=True, timeout=120
     )

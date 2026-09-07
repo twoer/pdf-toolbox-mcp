@@ -6,6 +6,7 @@ import pytest
 
 from pdf_toolbox.engine.sandbox import (
     PageRangeError,
+    atomic_output,
     ensure_pdf,
     flatten_pages,
     merge_overlapping_ranges,
@@ -72,3 +73,21 @@ class TestEnsurePdf:
         f.write_text("x")
         with pytest.raises(ValueError):
             ensure_pdf(f)
+
+
+class TestAtomicOutput:
+    def test_commits_replacement(self, tmp_path):
+        output = tmp_path / "result.txt"
+        with atomic_output(output) as temporary:
+            temporary.write_text("complete", encoding="utf-8")
+        assert output.read_text(encoding="utf-8") == "complete"
+        assert not list(tmp_path.glob(".result.txt.*"))
+
+    def test_failure_keeps_existing_target_and_cleans_temp(self, tmp_path):
+        output = tmp_path / "result.txt"
+        output.write_text("original", encoding="utf-8")
+        with pytest.raises(RuntimeError), atomic_output(output, overwrite=True) as temporary:
+            temporary.write_text("partial", encoding="utf-8")
+            raise RuntimeError("tool failed")
+        assert output.read_text(encoding="utf-8") == "original"
+        assert not list(tmp_path.glob(".result.txt.*"))

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import os
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -117,6 +120,30 @@ def check_write(path: str | Path) -> Path:
         if p.is_relative_to(Path(denied)) and str(p) != "/":
             raise PermissionError(f"拒绝写入系统目录: {p}")
     return p
+
+
+@contextmanager
+def atomic_output(path: str | Path, overwrite: bool = False) -> Iterator[Path]:
+    """为单文件输出准备同目录临时路径，并在成功后原子替换目标。"""
+    out = check_write(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if out.exists() and not overwrite:
+        raise FileExistsError(f"输出已存在（overwrite=True 才覆盖）: {out}")
+
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{out.name}.", suffix=out.suffix, dir=out.parent)
+    os.close(fd)
+    tmp = Path(tmp_name)
+    tmp.unlink()
+    try:
+        yield tmp
+        if not tmp.exists():
+            raise RuntimeError(f"输出失败（无产物）: {out}")
+        if out.exists() and not overwrite:
+            raise FileExistsError(f"输出已存在（overwrite=True 才覆盖）: {out}")
+        os.replace(tmp, out)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def default_output(path: Path, suffix: str, out_dir: Path | None = None) -> Path:

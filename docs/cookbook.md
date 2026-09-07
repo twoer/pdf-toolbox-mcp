@@ -3,7 +3,7 @@
 Start with `pdftoolbox doctor` / `tool_doctor`, then use the [README](../README.md) for the first three moves (OCR write-back, unlock, redact-by-keyword). This cookbook walks the rest — same conventions: in an MCP client you just describe the goal and the agent picks the tool; headless, define once:
 
 ```bash
-PTX="uvx --from git+https://github.com/twoer/pdf-toolbox-mcp pdftoolbox"
+PTX="uvx --from pdf-toolbox-mcp pdftoolbox"
 ```
 
 ## Batch-OCR a folder of scans
@@ -57,10 +57,10 @@ Text extraction fails on dense tables and diagrams. Render the page and hand it 
 
 > “Page 4 is a big table — look at it and tell me the totals.”
 
-`render_pages(path, pages="4", dpi=200, return_images=True)` returns the PNG as an image block inside the MCP response, so the model reads it without touching disk. `dpi` can go up to 300 for small print; `pages` accepts ranges like `"1-3,5"`.
+`render_pages(path, pages="4", dpi=200, return_images=True)` returns the PNG as an image block inside the MCP response, so the model reads it without touching disk. `dpi` can go up to 300 for small print; `pages` accepts ranges like `"1-3,5"`. When writing files, pass `overwrite=true` only when replacing existing images is intentional.
 
 ```bash
-$PTX render manual.pdf --pages 4 --dpi 200 --out-dir ./png
+$PTX render manual.pdf --pages 4 --dpi 200 --out-dir ./png --overwrite
 ```
 
 ## Locate text, then redact surgically
@@ -103,7 +103,7 @@ $PTX images report.pdf --pages 1-3     # extract PNGs
 $PTX attachments contract.pdf          # extract embedded files (out_dir optional)
 ```
 
-MCP equivalents: `extract_images(list_only=true)` / `extract_attachments(out_dir=…)`.
+MCP equivalents: `extract_images(list_only=true)` / `extract_attachments(out_dir=…)`; both preserve existing files by default and accept `overwrite=true` for intentional replacement.
 
 ## Audit fonts before printing
 

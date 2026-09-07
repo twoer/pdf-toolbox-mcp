@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 
 from .errors import EncryptedPdfError
 from .meta import pdf_info
 from .probe import require
-from .sandbox import ensure_pdf, flatten_pages, group_consecutive, parse_pages
+from .sandbox import check_write, ensure_pdf, flatten_pages, group_consecutive, parse_pages
 
 # pdftoppm 输出文件名形如 prefix-3.png / prefix-03.png，数字即绝对页号
 _PAGE_NUM_RE = re.compile(r"-(\d+)\.png$")
@@ -20,6 +22,7 @@ def render_pages(
     pages: str = "1",
     dpi: int = 150,
     out_dir: str | Path | None = None,
+    overwrite: bool = False,
 ) -> dict:
     """渲染指定页为 PNG，返回文件路径与页号（MCP 层按需读成 base64 图像块）。
 
@@ -29,6 +32,7 @@ def render_pages(
     require("pdftoppm")
     dpi = max(72, min(int(dpi), 300))
     target_dir = Path(out_dir).expanduser().resolve() if out_dir else pdf.parent
+    check_write(target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
 
     info = pdf_info(pdf)
@@ -36,26 +40,40 @@ def render_pages(
         raise EncryptedPdfError(str(pdf), hint="渲染前需先 unlock_pdf 解锁")
 
     unique = flatten_pages(parse_pages(pages, max_pages=info["pages"]))
+    groups = group_consecutive(unique)
+    if not overwrite:
+        for a, b in groups:
+            span = f"-{b}" if b != a else ""
+            prefix = target_dir / f"{pdf.stem}_p{a}{span}"
+            existing = sorted(target_dir.glob(f"{prefix.name}-*.png"))
+            if existing:
+                raise FileExistsError(
+                    f"输出已存在（overwrite=True 才覆盖）: {existing[0]}"
+                )
     outputs: list[dict] = []
-    for a, b in group_consecutive(unique):
-        span = f"-{b}" if b != a else ""
-        prefix = target_dir / f"{pdf.stem}_p{a}{span}"
-        proc = subprocess.run(
-            [
-                "pdftoppm", "-png", "-r", str(dpi),
-                "-f", str(a), "-l", str(b),
-                str(pdf), str(prefix),
-            ],
-            capture_output=True, text=True, timeout=180,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(f"pdftoppm 失败: {proc.stderr.strip()[:300]}")
-        for png in sorted(target_dir.glob(f"{prefix.name}-*.png")):
-            m = _PAGE_NUM_RE.search(png.name)
-            page_no = int(m.group(1)) if m else None
-            outputs.append(
-                {"file": str(png), "page": page_no, "size_bytes": png.stat().st_size}
+    with tempfile.TemporaryDirectory(dir=target_dir, prefix=".pdf-toolbox-render-") as tmp:
+        tmpdir = Path(tmp)
+        for a, b in groups:
+            span = f"-{b}" if b != a else ""
+            prefix = tmpdir / f"{pdf.stem}_p{a}{span}"
+            proc = subprocess.run(
+                [
+                    "pdftoppm", "-png", "-r", str(dpi),
+                    "-f", str(a), "-l", str(b),
+                    str(pdf), str(prefix),
+                ],
+                capture_output=True, text=True, timeout=180,
             )
+            if proc.returncode != 0:
+                raise RuntimeError(f"pdftoppm 失败: {proc.stderr.strip()[:300]}")
+            for png in sorted(tmpdir.glob(f"{prefix.name}-*.png")):
+                destination = target_dir / png.name
+                os.replace(png, destination)
+                m = _PAGE_NUM_RE.search(destination.name)
+                page_no = int(m.group(1)) if m else None
+                outputs.append(
+                    {"file": str(destination), "page": page_no, "size_bytes": destination.stat().st_size}
+                )
 
     outputs.sort(key=lambda x: (x["page"] is None, x["page"]))
     return {"path": str(pdf), "dpi": dpi, "images": outputs, "count": len(outputs)}

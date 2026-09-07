@@ -7,6 +7,9 @@
 - Passwords are never included in logs or error payloads.
 - Outputs never silently overwrite existing files.
 - Writes can be confined to a workspace via `PDF_TOOLBOX_WORKSPACE`; system directories are always denied.
+- Single-file outputs are staged in a same-directory temporary file and atomically replaced only after success.
+- Multi-file exports are staged in a temporary directory and published only after the complete operation succeeds.
+- `overwrite=false` is the default for all PDF outputs and export directories; failed runs leave existing targets untouched.
 
 ## True redaction guarantees (and boundaries)
 

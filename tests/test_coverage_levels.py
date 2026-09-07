@@ -280,7 +280,7 @@ class TestFontsAndAssetsCoverage:
             with_annotation=False,
             attachment_count=2,
         )
-        result = extract_attachments(dirty, out_dir=tmp_path)
+        result = extract_attachments(dirty, out_dir=tmp_path, overwrite=True)
         assert result["count"] == 2
         assert {att["name"] for att in result["attachments"]} == {"hidden-0.txt", "hidden-1.txt"}
 

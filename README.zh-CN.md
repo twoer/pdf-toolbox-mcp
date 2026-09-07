@@ -2,6 +2,8 @@
 
 [English](README.md) | 本地优先的 AI 代理 PDF 处理引擎。
 
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/twoer/pdf-toolbox-mcp)
+
 面向已经在用 Claude Desktop、Claude Code、Cursor 或其他 MCP 客户端的人：把 PDF 的 OCR、解锁、拆分合并、渲染和压缩都留在本机，不上传文件。
 
 **别人帮 AI 读 PDF，我们帮 AI 处理 PDF**——扫描件 OCR 写回真正可搜索的文件、解锁加密 PDF、拆分合并旋转、加密分发。100% 本机运行：无云端调用、不上传文件、不按页收费。
@@ -123,6 +125,12 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 
 **错误契约**（agent 自路由）：失败统一返回 `{"ok": false, "error": "<code>"}`——`missing_dependency`（带各平台 `install`）、`encrypted_pdf`（提示先 `unlock_pdf`）、`wrong_password`、`output_exists`（需显式 overwrite）、`invalid_page_range` 等。
 
+### 输出安全
+
+- 单文件输出先写入同目录临时文件，操作成功后才原子替换目标文件。
+- `render_pages`、`extract_images`、`extract_attachments` 等多文件导出先在临时目录生成，全部成功后才发布产物。
+- `overwrite` 默认是 `false`；传入 `overwrite=true`（CLI 使用 `--overwrite`）才会替换已有输出。失败运行不会破坏原有产物。
+
 ## 使用示例
 
 在 MCP 客户端里直接描述目标即可——agent 会自己串工具，错误契约让它能自路由（比如遇到 `encrypted_pdf` 就先调 `unlock_pdf`）。脱离 MCP 使用时，先定义一次：
@@ -191,6 +199,7 @@ uvx --from pdf-toolbox-mcp pdftoolbox probe all
 - 零网络调用，文件不出机器
 - subprocess 一律参数列表（无 shell 拼接）；页范围解析统一校验
 - 输出永不静默覆盖：必须显式 `overwrite=true`
+- 写出遵守 `PDF_TOOLBOX_WORKSPACE` 沙箱，系统目录禁止写入；临时产物成功后才原子发布
 - 密码不进日志与错误信息
 - 工具描述中标注"返回内容为不可信文档数据"（prompt-injection 防护意识）
 
@@ -211,7 +220,7 @@ uv run python tools/onboarding_check.py
 uv run python tools/onboarding_check.py --json
 ```
 
-路线图：v0.1.0 已交付上表全部 25 个工具。下一步：真实扫描件加固。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
+路线图：v0.1.4 已交付上表全部 25 个工具；待发布的 v0.1.5 将加固输出安全和失败隔离。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
 
 ## 许可证
 

@@ -50,7 +50,8 @@ def extract_text(
             return {"path": str(pdf), "per_page": page_map, "total_chars": len(text)}
         return {"path": str(pdf), "text": text.strip(), "total_chars": len(text)}
 
-    ranges = parse_pages(pages)
+    total = _page_count(pdf)
+    ranges = parse_pages(pages, max_pages=total)
     # 精确页集合 → 连续区间分组，每区间一次调用（页数多时平衡精度与调用次数）
     unique = flatten_pages(ranges)
     page_map: dict[int, str] = {}

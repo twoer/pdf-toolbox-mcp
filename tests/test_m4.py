@@ -176,3 +176,14 @@ class TestCompress:
     def test_bad_quality(self, scanned_pdf, tmp_path):
         with pytest.raises(ValueError):
             compress_pdf(scanned_pdf, quality="ultra", output=tmp_path / "c.pdf")
+
+    def test_existing_output_fails_before_gs_runs(self, scanned_pdf, tmp_path, monkeypatch):
+        def _no_gs(*args, **kwargs):
+            raise AssertionError("输出已存在时不应再跑 ghostscript")
+
+        monkeypatch.setattr("pdf_toolbox.engine.compress._gs", _no_gs)
+        existing = tmp_path / "c.pdf"
+        existing.write_bytes(b"existing")
+        with pytest.raises(FileExistsError):
+            compress_pdf(scanned_pdf, output=existing)
+        assert existing.read_bytes() == b"existing"

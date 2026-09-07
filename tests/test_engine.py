@@ -49,6 +49,12 @@ class TestExtractText:
         result = extract_text(text_pdf, pages="1-2,2-3")
         assert result["text"].count("Sample Page 2") == 1
 
+    def test_out_of_range(self, text_pdf):
+        from pdf_toolbox.engine.sandbox import PageRangeError
+
+        with pytest.raises(PageRangeError):
+            extract_text(text_pdf, pages="1-99")
+
     def test_per_page(self, text_pdf):
         result = extract_text(text_pdf, per_page=True)
         assert set(result["per_page"]) == {1, 2, 3}
@@ -77,6 +83,21 @@ class TestRender:
     def test_dpi_clamped(self, text_pdf, tmp_path):
         result = render_pages(text_pdf, pages="1", dpi=9999, out_dir=tmp_path)
         assert result["dpi"] == 300
+
+    def test_workspace_and_overwrite_guards(self, text_pdf, tmp_path, monkeypatch):
+        workspace = tmp_path / "workspace"
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        monkeypatch.setenv("PDF_TOOLBOX_WORKSPACE", str(workspace))
+        with pytest.raises(PermissionError):
+            render_pages(text_pdf, out_dir=outside)
+
+        monkeypatch.delenv("PDF_TOOLBOX_WORKSPACE")
+        render_pages(text_pdf, out_dir=tmp_path)
+        with pytest.raises(FileExistsError):
+            render_pages(text_pdf, out_dir=tmp_path)
+        result = render_pages(text_pdf, out_dir=tmp_path, overwrite=True)
+        assert result["count"] == 1
 
     def test_out_of_range(self, text_pdf, tmp_path):
         from pdf_toolbox.engine.sandbox import PageRangeError

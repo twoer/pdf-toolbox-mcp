@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 from .probe import find_binary, require
-from .sandbox import assert_readable, check_write, ensure_pdf
+from .sandbox import assert_readable, atomic_output, check_write, ensure_pdf
 
 # 从高质量到低质量依次尝试（gs PDFSETTINGS 档位）
 _QUALITY_LADDER = ["prepress", "printer", "ebook", "screen"]
@@ -77,7 +77,8 @@ def compress_pdf(
         assert best is not None
         import shutil
 
-        shutil.copyfile(best[1], out)
+        with atomic_output(out, overwrite) as tmp_out:
+            shutil.copyfile(best[1], tmp_out)
         quality_used = best[2]
 
     size_after = out.stat().st_size

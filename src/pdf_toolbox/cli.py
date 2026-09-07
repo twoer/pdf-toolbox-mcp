@@ -111,9 +111,10 @@ def render(
     pages: str = typer.Option("1", help="页范围，如 1-3,5"),
     dpi: int = typer.Option(150, help="72–300"),
     out_dir: Path | None = typer.Option(None),
+    overwrite: bool = typer.Option(False, help="覆盖已存在 PNG"),
 ) -> None:
     """渲染页面为 PNG（pdftoppm）"""
-    _echo(render_pages(path, pages=pages, dpi=dpi, out_dir=out_dir))
+    _echo(render_pages(path, pages=pages, dpi=dpi, out_dir=out_dir, overwrite=overwrite))
 
 
 @app.command()
@@ -192,15 +193,28 @@ def images(
     pages: str | None = typer.Option(None),
     list_only: bool = typer.Option(False, "--list-only", help="只列清单不落盘"),
     out_dir: Path | None = typer.Option(None),
+    overwrite: bool = typer.Option(False, help="覆盖已存在图片"),
 ) -> None:
     """抽取内嵌图片"""
-    _echo(extract_images(path, pages=pages, list_only=list_only, out_dir=out_dir))
+    _echo(
+        extract_images(
+            path,
+            pages=pages,
+            list_only=list_only,
+            out_dir=out_dir,
+            overwrite=overwrite,
+        )
+    )
 
 
 @app.command()
-def attachments(path: Path, out_dir: Path | None = typer.Option(None)) -> None:
+def attachments(
+    path: Path,
+    out_dir: Path | None = typer.Option(None),
+    overwrite: bool = typer.Option(False, help="覆盖已存在附件"),
+) -> None:
     """抽取内嵌附件"""
-    _echo(extract_attachments(path, out_dir=out_dir))
+    _echo(extract_attachments(path, out_dir=out_dir, overwrite=overwrite))
 
 
 @app.command()

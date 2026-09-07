@@ -32,7 +32,7 @@
 
 用 `tools/mcp_probe.py` 对自家 server（`uv run pdf-toolbox-mcp`，FastMCP 4.0.3 / protocol 2025-06-18）：
 
-- `list`：5 工具（info / extract_text / ocr_pdf / render_pages / dependency_status）✅
+- `list`：5 工具（info / extract_text / ocr_pdf / render_pages / dependency_status）✅（2026-09-05 协议探测快照；当前 server 已注册 25 个工具）
 - `call tool_extract_text`：返回结构化 JSON + 标记串 ✅
 
 无头 Claude Code 方案已就绪并注册验证（`✔ Connected`），但本机对外的 HTTPS 链路异常（TCP 可达、TLS 握手被复位）——用户侧网络环境问题，非本项目代码问题。**网络恢复后重跑**：
@@ -50,7 +50,7 @@ claude -p "用 pdf-toolbox 工具处理 .fixtures/scanned.pdf：先判断是否�
 
 - **PLAN §5 缺依赖结构化错误 ✅**：engine 层类型化异常（`errors.py`：Missing/Encrypted/WrongPassword）+ `require()` 前置检查；MCP 层 `_guard` 统一转 `{"ok": false, "error": <code>, ...}`（缺依赖带 install 命令、加密件带 unlock_pdf 引导、未知异常兜底 internal_error）；成功返回注入 `_deps` 能力摘要（协议层实测 `{'level': 3, 'missing': []}`）
 - P1a 五件套（info / extract_text / ocr_pdf / render_pages / **unlock_pdf**）+ P1b 四件（split / merge / rotate / protect）全部就位；render 支持 return_images 直返 MCP 图像块
-- 测试 60/60（macOS + docker Linux）
+- M1 阶段测试 60/60（macOS + docker Linux）
 - render 的 Path 拼接 bug 曾在重写时复发、fastmcp 4.x Image 导出路径变化——均已修复（测试拦截）
 
 ## M-1d 样本评估 —— ⏳ 待办
@@ -81,4 +81,4 @@ claude -p "用 pdf-toolbox 工具处理 .fixtures/scanned.pdf：先判断是否�
 
 ## 结论
 
-M-1b/M-1c 通过，M-1d 因样本依赖暂挂。**建议：M0 骨架（CI/测试补齐）与 M-1d 并行推进，M-1d 结果不阻塞 M0，但阻塞 M2 发布。**
+M-1b/M-1c 通过，M-1d 合成样本预演完成、正式版因真实样本依赖暂挂。当前主分支已完成输出写入安全加固，普通测试 244 个、realworld 测试 7 个均通过。**M-1d 正式结果不阻塞工程维护，但阻塞 M2 发布。**

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 
+from .pages import _page_count
 from .probe import require
 from .sandbox import assert_readable, check_write, ensure_pdf, flatten_pages, group_consecutive
 
@@ -15,18 +18,17 @@ def extract_images(
     pages: str | None = None,
     list_only: bool = False,
     out_dir: str | Path | None = None,
+    overwrite: bool = False,
 ) -> dict:
     """抽取内嵌图片。list_only=True 只返回清单（pdfimages -list）不落盘。"""
     pdf = assert_readable(ensure_pdf(Path(path)))
     require("pdfimages")
 
-    target_dir = Path(out_dir).expanduser().resolve() if out_dir else pdf.parent
-    target_dir.mkdir(parents=True, exist_ok=True)
     ranges: list[tuple[int, int]] | None = None
     if pages:
         from .sandbox import parse_pages
 
-        ranges = parse_pages(pages)
+        ranges = parse_pages(pages, max_pages=_page_count(pdf))
         unique = flatten_pages(ranges)
         ranges = group_consecutive(unique)
 
@@ -72,45 +74,74 @@ def extract_images(
         return {"path": str(pdf), "inventory": inventory, "count": len(inventory)}
 
     outputs: list[dict] = []
+    target_dir = Path(out_dir).expanduser().resolve() if out_dir else pdf.parent
+    check_write(target_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    prefixes = (
+        [target_dir / f"{pdf.stem}_img"]
+        if ranges is None
+        else [
+            target_dir / f"{pdf.stem}_img_{'p' + str(a) if a == b else f'p{a}-{b}'}"
+            for a, b in ranges
+        ]
+    )
+    if not overwrite:
+        for prefix in prefixes:
+            existing = sorted(target_dir.glob(f"{prefix.name}-*"))
+            if existing:
+                raise FileExistsError(
+                    f"输出已存在（overwrite=True 才覆盖）: {existing[0]}"
+                )
     if ranges is None:
-        prefix = check_write(target_dir / f"{pdf.stem}_img")
-        cmd = ["pdfimages", "-png", "-p", str(pdf), str(prefix)]
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        if proc.returncode != 0:
-            raise RuntimeError(f"pdfimages 失败: {proc.stderr.strip()[:300]}")
-
-        for png in sorted(target_dir.glob(f"{prefix.name}-*.png")):
-            m = re.search(r"-(\d+)-(\d+)\.png$", png.name)
-            outputs.append(
-                {
-                    "file": str(png),
-                    "page": int(m.group(1)) if m else None,
-                    "size_bytes": png.stat().st_size,
-                }
-            )
-    else:
-        for a, b in ranges:
-            suffix = f"p{a}" if a == b else f"p{a}-{b}"
-            prefix = check_write(target_dir / f"{pdf.stem}_img_{suffix}")
-            cmd = ["pdfimages", "-png", "-p", "-f", str(a), "-l", str(b), str(pdf), str(prefix)]
+        with tempfile.TemporaryDirectory(dir=target_dir, prefix=".pdf-toolbox-images-") as tmp:
+            prefix = Path(tmp) / f"{pdf.stem}_img"
+            cmd = ["pdfimages", "-png", "-p", str(pdf), str(prefix)]
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
             if proc.returncode != 0:
                 raise RuntimeError(f"pdfimages 失败: {proc.stderr.strip()[:300]}")
 
-            for png in sorted(target_dir.glob(f"{prefix.name}-*.png")):
-                m = re.search(r"-(\d+)-(\d+)\.png$", png.name)
+            for png in sorted(Path(tmp).glob(f"{prefix.name}-*.png")):
+                destination = target_dir / png.name
+                os.replace(png, destination)
+                m = re.search(r"-(\d+)-(\d+)\.png$", destination.name)
                 outputs.append(
                     {
-                        "file": str(png),
+                        "file": str(destination),
                         "page": int(m.group(1)) if m else None,
-                        "size_bytes": png.stat().st_size,
+                        "size_bytes": destination.stat().st_size,
                     }
                 )
+    else:
+        with tempfile.TemporaryDirectory(dir=target_dir, prefix=".pdf-toolbox-images-") as tmp:
+            tmpdir = Path(tmp)
+            for a, b in ranges:
+                suffix = f"p{a}" if a == b else f"p{a}-{b}"
+                prefix = tmpdir / f"{pdf.stem}_img_{suffix}"
+                cmd = ["pdfimages", "-png", "-p", "-f", str(a), "-l", str(b), str(pdf), str(prefix)]
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                if proc.returncode != 0:
+                    raise RuntimeError(f"pdfimages 失败: {proc.stderr.strip()[:300]}")
+
+                for png in sorted(tmpdir.glob(f"{prefix.name}-*.png")):
+                    destination = target_dir / png.name
+                    os.replace(png, destination)
+                    m = re.search(r"-(\d+)-(\d+)\.png$", destination.name)
+                    outputs.append(
+                        {
+                            "file": str(destination),
+                            "page": int(m.group(1)) if m else None,
+                            "size_bytes": destination.stat().st_size,
+                        }
+                    )
     outputs.sort(key=lambda x: (x["page"] is None, x["page"], x["file"]))
     return {"path": str(pdf), "images": outputs, "count": len(outputs)}
 
 
-def extract_attachments(path: str | Path, out_dir: str | Path | None = None) -> dict:
+def extract_attachments(
+    path: str | Path,
+    out_dir: str | Path | None = None,
+    overwrite: bool = False,
+) -> dict:
     """抽取 PDF 内嵌附件（pdfdetach）。返回清单与落盘文件。"""
     pdf = assert_readable(ensure_pdf(Path(path)))
     require("pdfdetach")
@@ -130,20 +161,52 @@ def extract_attachments(path: str | Path, out_dir: str | Path | None = None) -> 
                 {"index": int(m.group(1)), "name": m.group(2).strip()}
             )
 
+    # pdfdetach -saveall 落盘是平铺目录：名字带路径会写出目录之外，
+    # 字面同名会静默互相覆盖——两种都无法完整抽取，先拒绝
+    problems: list[str] = []
+    seen: set[str] = set()
+    for attachment in attachments:
+        raw = attachment["name"]
+        name = Path(raw).name
+        if name != raw or "\\" in raw:
+            problems.append(f"附件名含路径: {raw}")
+        elif name in seen:
+            problems.append(f"同名附件: {name}")
+        else:
+            seen.add(name)
+    if problems:
+        raise ValueError(f"无法完整抽取附件: {'; '.join(problems)}")
+
     saved: list[str] = []
     if attachments:
         target_dir = Path(out_dir).expanduser().resolve() if out_dir else pdf.parent
+        check_write(target_dir)
         target_dir.mkdir(parents=True, exist_ok=True)
-        check_write(target_dir / ".pdfdetach-write-check")
-        (target_dir / ".pdfdetach-write-check").unlink(missing_ok=True)
-        proc = subprocess.run(
-            ["pdfdetach", "-saveall", "-o", str(target_dir), str(pdf)],
-            capture_output=True, text=True, timeout=120,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(f"pdfdetach 保存失败: {proc.stderr.strip()[:300]}")
+        if not overwrite:
+            for attachment in attachments:
+                target = target_dir / Path(attachment["name"]).name
+                if target.exists():
+                    raise FileExistsError(
+                        f"输出已存在（overwrite=True 才覆盖）: {target}"
+                    )
+        # Probe writability without touching a user-chosen, fixed filename.
+        with tempfile.NamedTemporaryFile(
+            prefix=".pdfdetach-write-check-", dir=target_dir
+        ):
+            pass
+        with tempfile.TemporaryDirectory(dir=target_dir, prefix=".pdf-toolbox-attachments-") as tmp:
+            proc = subprocess.run(
+                ["pdfdetach", "-saveall", "-o", tmp, str(pdf)],
+                capture_output=True, text=True, timeout=120,
+            )
+            if proc.returncode != 0:
+                raise RuntimeError(f"pdfdetach 保存失败: {proc.stderr.strip()[:300]}")
+            for attachment in attachments:
+                source = Path(tmp) / Path(attachment["name"]).name
+                if source.exists():
+                    os.replace(source, target_dir / source.name)
         for att in attachments:
-            f = target_dir / att["name"]
+            f = target_dir / Path(att["name"]).name
             if f.exists():
                 saved.append(str(f))
 

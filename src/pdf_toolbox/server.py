@@ -123,9 +123,17 @@ def tool_render_pages(
     dpi: int = 150,
     out_dir: str | None = None,
     return_images: bool = False,
+    overwrite: bool = False,
 ):
     """渲染指定页为 PNG。return_images=True 时直接返回图像内容块（供视觉查看复杂版面/图表/扫描页）。"""
-    result = _guard(render_pages, path=path, pages=pages, dpi=dpi, out_dir=out_dir)
+    result = _guard(
+        render_pages,
+        path=path,
+        pages=pages,
+        dpi=dpi,
+        out_dir=out_dir,
+        overwrite=overwrite,
+    )
     if not return_images or not isinstance(result, dict) or result.get("ok") is False:
         return result
     return [
@@ -221,15 +229,35 @@ def tool_extract_images(
     pages: str | None = None,
     list_only: bool = False,
     out_dir: str | None = None,
+    overwrite: bool = False,
 ) -> dict:
-    """抽取 PDF 内嵌图片为 PNG；list_only=true 只返回图片清单不落盘。"""
-    return _guard(extract_images, path=path, pages=pages, list_only=list_only, out_dir=out_dir)
+    """抽取 PDF 内嵌图片为 PNG；list_only=true 只返回图片清单不落盘。
+
+    overwrite=true 才允许覆盖同名图片。
+    """
+    return _guard(
+        extract_images,
+        path=path,
+        pages=pages,
+        list_only=list_only,
+        out_dir=out_dir,
+        overwrite=overwrite,
+    )
 
 
 @mcp.tool
-def tool_extract_attachments(path: str, out_dir: str | None = None) -> dict:
-    """抽取 PDF 内嵌附件文件到指定目录。"""
-    return _guard(extract_attachments, path=path, out_dir=out_dir)
+def tool_extract_attachments(
+    path: str,
+    out_dir: str | None = None,
+    overwrite: bool = False,
+) -> dict:
+    """抽取 PDF 内嵌附件文件到指定目录；overwrite=true 才允许覆盖同名文件。"""
+    return _guard(
+        extract_attachments,
+        path=path,
+        out_dir=out_dir,
+        overwrite=overwrite,
+    )
 
 
 @mcp.tool
@@ -374,7 +402,10 @@ def tool_compress_pdf(
 
 @mcp.tool
 def tool_dependency_status() -> list[dict]:
-    """探测系统依赖（qpdf/poppler/tesseract/ghostscript）、安装命令与可解锁工具。工具报 missing_dependency 时先看这里。"""
+    """探测系统依赖、安装命令与可解锁工具。
+
+    工具报 missing_dependency 时先看这里。
+    """
     return [d.as_dict() for d in probe_all()]
 
 

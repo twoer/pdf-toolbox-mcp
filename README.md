@@ -2,6 +2,8 @@
 
 [中文文档](https://github.com/twoer/pdf-toolbox-mcp/blob/main/README.zh-CN.md) | Local-first PDF processing for AI agents.
 
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/twoer/pdf-toolbox-mcp)
+
 Built for people already using Claude Desktop, Claude Code, Cursor, or another MCP client who want local PDF OCR, unlock, split/merge, render, and compress without uploading files.
 
 **Others help AI *read* PDFs. This one helps AI *process* them** — OCR a scan into a truly searchable file, unlock encrypted PDFs, split/merge/rotate, re-encrypt for sharing. 100% on your machine: no cloud calls, no file uploads, no per-page fees.
@@ -123,6 +125,12 @@ Pain points this addresses directly:
 
 **Error contract** (agents self-route): failures return `{"ok": false, "error": "<code>"}` — `missing_dependency` (with `install` per platform), `encrypted_pdf` (hint: call `unlock_pdf` first), `wrong_password`, `output_exists` (explicit overwrite required), `invalid_page_range`, …
 
+### Output safety
+
+- Single-file outputs are written to a same-directory temporary file and atomically replaced only after the operation succeeds.
+- `render_pages`, `extract_images`, and `extract_attachments` stage multi-file exports in a temporary directory and publish them only after all files are ready.
+- `overwrite` defaults to `false`; pass `overwrite=true` (or the CLI `--overwrite`) to replace an existing output. Failed runs leave the previous output untouched.
+
 ## Examples
 
 In an MCP client, just describe the outcome — the agent chains the tools itself, and the error contract makes it self-routing (an `encrypted_pdf` error tells it to call `unlock_pdf` first, and so on). For headless use, define once:
@@ -191,6 +199,7 @@ uvx --from pdf-toolbox-mcp pdftoolbox probe all
 - No network calls. Files never leave the machine.
 - All subprocess calls use argument lists (no shell interpolation); page-range parsing is shared and validated.
 - Outputs never silently overwrite: `overwrite=true` must be passed explicitly.
+- Writes honor `PDF_TOOLBOX_WORKSPACE`; system directories are denied, and staged outputs are published atomically.
 - Passwords are never logged in error payloads.
 - Untrusted PDF content is flagged in tool descriptions (prompt-injection awareness).
 
@@ -220,7 +229,7 @@ docker run --rm -v "$PWD":/src:ro python:3.12-slim bash -c \
    pip install -q uv && cp -r /src /work && cd /work && uv sync --dev --quiet && uv run pytest -q'
 ```
 
-Roadmap: v0.1.0 ships all 25 tools above. Next up: hardening against real-world scanned documents. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
+Roadmap: v0.1.4 ships all 25 tools above; the pending v0.1.5 release hardens output safety and failure isolation. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
 
 ## License
 

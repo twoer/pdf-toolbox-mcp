@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .pages import _page_count, _prep_output
-from .sandbox import assert_readable, ensure_pdf
+from .sandbox import assert_readable, atomic_output, ensure_pdf
 
 
 def _iter_fields(acroform) -> list:
@@ -52,7 +52,7 @@ def fill_form(
             depth += 1
         return ".".join(reversed([p for p in parts if p]))
 
-    with pikepdf.open(pdf_path) as pdf:
+    with atomic_output(out, overwrite) as tmp, pikepdf.open(pdf_path) as pdf:
         if "/AcroForm" not in pdf.Root:
             raise ValueError("文档没有 AcroForm 表单")
 
@@ -69,7 +69,7 @@ def fill_form(
                 filled.append(name)
 
         pdf.Root.AcroForm.NeedAppearances = True
-        pdf.save(out)
+        pdf.save(tmp)
 
     return {
         "input": str(pdf_path),
@@ -113,7 +113,7 @@ def edit_metadata(
     }
     provided = {k: v for k, v in values.items() if v is not None}
 
-    with pikepdf.open(pdf) as doc:
+    with atomic_output(out, overwrite) as tmp, pikepdf.open(pdf) as doc:
         if clear:
             for key in list(doc.docinfo.keys()):
                 del doc.docinfo[key]
@@ -128,7 +128,7 @@ def edit_metadata(
                 xmp_key = _META_KEYS[key][1]
                 # dc:creator 在 XMP 中是有序数组（rdf:Seq），其余为标量
                 meta[xmp_key] = [value] if xmp_key == "dc:creator" else value
-        doc.save(out)
+        doc.save(tmp)
 
     return {
         "input": str(pdf),

@@ -21,7 +21,7 @@ from ocrmypdf.exceptions import (
 
 from .errors import EncryptedPdfError, ToolboxError
 from .probe import require, tess_langs
-from .sandbox import check_write, ensure_pdf
+from .sandbox import atomic_output, check_write, ensure_pdf
 
 DEFAULT_LANG = os.environ.get("PDF_TOOLBOX_TESS_LANG", "chi_sim+eng")
 _LANG_INSTALL_HINT = {
@@ -83,23 +83,21 @@ def ocr_pdf(
     require("tesseract")
     out = Path(output) if output else pdf.with_name(f"{pdf.stem}_ocr.pdf")
     out = check_write(out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    if out.exists() and not overwrite:
-        raise FileExistsError(f"输出已存在（overwrite=True 才覆盖）: {out}")
 
     lang_effective, fell_back = resolve_lang(lang)
 
     try:
-        result = ocrmypdf.ocr(
-            str(pdf),
-            str(out),
-            language=lang_effective,
-            deskew=deskew,
-            skip_text=skip_text and not redo_ocr,
-            redo_ocr=redo_ocr,
-            progress_bar=False,
-            timeout=timeout,
-        )
+        with atomic_output(out, overwrite) as tmp:
+            result = ocrmypdf.ocr(
+                str(pdf),
+                str(tmp),
+                language=lang_effective,
+                deskew=deskew,
+                skip_text=skip_text and not redo_ocr,
+                redo_ocr=redo_ocr,
+                progress_bar=False,
+                timeout=timeout,
+            )
     except _OcrPriorFound as exc:
         raise RuntimeError("已有 OCR 层：用 redo_ocr=True 重做，或 skip_text=True 跳过") from exc
     except _OcrTaggedPdf as exc:

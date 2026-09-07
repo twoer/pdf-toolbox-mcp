@@ -9,9 +9,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from .errors import WrongPasswordError
-from .pages import _page_count, _prep_output, _qpdf
+from .pages import _page_count, _prep_output, _qpdf_atomic
 from .probe import require
-from .sandbox import assert_readable, ensure_pdf
+from .sandbox import assert_readable, atomic_output, ensure_pdf
 
 
 def protect_pdf(
@@ -50,7 +50,7 @@ def protect_pdf(
         "--",
         str(out),
     ]
-    _qpdf(args)
+    _qpdf_atomic(args, out, overwrite)
     return {
         "input": str(pdf),
         "output": str(out),
@@ -79,7 +79,11 @@ def unlock_pdf(
     out = _prep_output(out, overwrite)
 
     try:
-        _qpdf([f"--password={password}", "--decrypt", str(pdf), "--", str(out)])
+        _qpdf_atomic(
+            [f"--password={password}", "--decrypt", str(pdf), "--", str(out)],
+            out,
+            overwrite,
+        )
     except RuntimeError as exc:
         if "password" in str(exc).lower():
             raise WrongPasswordError(f"密码错误或权限不足: {str(exc)[:180]}") from exc
@@ -112,7 +116,7 @@ def sanitize(
     out = _prep_output(out, overwrite)
 
     removed: list[str] = []
-    with pikepdf.open(pdf_path) as pdf:
+    with atomic_output(out, overwrite) as tmp, pikepdf.open(pdf_path) as pdf:
         if strip_javascript:
             if "/OpenAction" in pdf.Root:
                 del pdf.Root["/OpenAction"]
@@ -145,7 +149,7 @@ def sanitize(
                 if "/Annots" in page:
                     del page["/Annots"]
             removed.append("annotations")
-        pdf.save(out)
+        pdf.save(tmp)
 
     return {
         "input": str(pdf_path),
@@ -249,7 +253,8 @@ def redact(
                             out_doc.pages.append(src.pages[i - 1])
             else:
                 out_doc.pages.extend(src.pages)
-            out_doc.save(out)
+            with atomic_output(out, overwrite) as tmp_out:
+                out_doc.save(tmp_out)
 
     return {
         "input": str(pdf),
