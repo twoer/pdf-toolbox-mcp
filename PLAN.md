@@ -225,7 +225,7 @@ pdf-toolbox-mcp/
 | M-1c 客户端 PoC | 目标 MCP 客户端调用 OCR、文本和图片返回 | 0.5 天 | 三个真实场景端到端完成 |
 | M-1d 样本评估 | 5–10 份脱敏中文 PDF，记录质量、耗时和失败原因 | 0.5 天 | 按 RESEARCH.md §6 四条继续门槛判定（两平台 10 分钟安装 / OCR 准确率达标 / 核心任务成功率 ≥80% / 无高危缺陷），数据写入验收记录并给出继续/终止结论 |
 
-> **进度（2026-09-07，详见 [docs/m1-record.md](docs/m1-record.md)）**：M-1b ✅（macOS 本机 + Linux docker 两平台，OCR 写回闭环成立）；M-1c ✅ 协议层（mcp_probe 对自家 server 全通），真实客户端验收待网络恢复；M-1d 🟡 合成样本预演完成，正式验收仍待 5–10 份真实中文样本，不阻塞工程里程碑但阻塞 M2 发布。
+> **进度（2026-09-07，详见 [docs/m1-record.md](docs/m1-record.md)）**：M-1b ✅（macOS 本机 + Linux docker 两平台，OCR 写回闭环成立）；M-1c ✅ 协议层（mcp_probe 对自家 server 全通），真实客户端验收待网络恢复；M-1d 🟡 合成样本预演完成，正式验收仍待 5–10 份真实中文样本，作为发布后的质量基线，不阻塞 v0.1.6 发布。
 
 M-1 未通过时，不扩展 P2/P3；优先解决依赖分发、协议返回类型和 OCR 质量问题。
 
@@ -235,9 +235,9 @@ M-1 未通过时，不扩展 P2/P3；优先解决依赖分发、协议返回类�
 |---|---|---|---|
 | **M0 骨架** | repo、pyproject、probe.py、sandbox.py、CI 骨架、PyPI 名确认 | 0.5–1 天 | 探测器在三平台返回正确安装命令 |
 | **M1 MVP** | 先做 `pdf_info`、`extract_text`、`ocr_pdf`、`render_pages`，加 CLI 和 MCP 契约测试 | 5–8 天 | 至少两平台 e2e 通过；目标客户端完成三个真实场景 |
-| **M2 发布** | 补齐 P1b 四个 qpdf 工具 ✅；README 打磨 ✅（双语+对比表）、PyPI 发布、6 个目录站提交、教程一篇（草稿 ✅） | 1–2 天 | 8 个 P1 工具全部可用 ✅（实际 9+探测）；uvx 可用（wheel 隔离验证 ✅，PyPI 待发）；awesome PR 被合并 |
+| **M2 发布** | 补齐 P1b 四个工具 ✅；README 打磨 ✅（双语+对比表）；v0.1.6 GitHub Release + PyPI 发布 ✅；目录站提交、教程投放待运营推进 | 1–2 天 | 8 个 P1 工具全部可用 ✅（实际 9+探测）；uvx 全新环境可用 ✅；目录站收录与教程发布持续推进 |
 
-> **M2 进度（2026-09-05）**：材料侧全部就绪——双语 README（含竞品对比表与安装矩阵）、教程草稿、目录站提交文案、打包验证（uv build + 隔离环境 uvx + CLI）——发版清单与教程草稿存于本地 `notes/`（未入库）。剩余三项需仓库所有者：建 GitHub 远程、`uv publish`（需 PyPI token）、目录站提交与教程投放。
+> **M2 进度（2026-09-07）**：代码、双语 README、教程草稿、目录站提交文案、打包验证、GitHub Release 和 PyPI 发布均完成。剩余工作是目录站提交、教程投放、真实客户端验收与真实样本质量复核。
 | **M3 深化** | P2 分批实现 ✅（2026-09-05：is_searchable / list_fonts / extract_images / extract_attachments / check_repair+repair / linearize / batch_ocr 逐文件结果+重试+超时，17 工具，77 测试双平台） | 4–7 天 | 50 文件批处理有超时、失败重试和逐文件结果 ✅（2026-09-06 压测：50/50 成功，1.56s/文件，见 m1-record） |
 | **M4 高级** | P3 实现 ✅（2026-09-06：sanitize / redact 真涂黑 / fill_form / edit_metadata / compress_pdf 档位阶梯，22 工具，92 测试双平台） | 5–10 天 | redact 后无法提取被涂内容 ✅（产物纯图像，pdftotext 全空 + 遮块像素级验证），文档明确质量损失和边界 ✅（工具描述与 README 注明"全文档光栅化、无文本层"） |
 
