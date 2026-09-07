@@ -60,6 +60,19 @@ class TestExtractText:
         assert set(result["per_page"]) == {1, 2, 3}
         assert "page 3" in result["per_page"][3]
 
+    def test_many_sparse_ranges_use_one_process(self, text_pdf, monkeypatch):
+        calls = []
+
+        def fake_pdftotext(args):
+            calls.append(args)
+            return "\f".join(f"page {page}" for page in range(1, 18))
+
+        monkeypatch.setattr("pdf_toolbox.engine.text._page_count", lambda _path: 17)
+        monkeypatch.setattr("pdf_toolbox.engine.text._pdftotext", fake_pdftotext)
+        result = extract_text(text_pdf, pages="1,3,5,7,9,11,13,15,17")
+        assert len(calls) == 1
+        assert result["text"] == "\n".join(f"page {page}" for page in range(1, 18, 2))
+
     def test_scanned_has_no_text(self, scanned_pdf):
         result = extract_text(scanned_pdf)
         assert len(result["text"].strip()) == 0  # 智能路由的判断依据

@@ -5,6 +5,8 @@
 - **No network calls.** The server makes no outbound connections; files never leave the machine.
 - Subprocess calls use argument lists only — no shell interpolation, no injection surface from page ranges or filenames.
 - Passwords are never included in logs or error payloads.
+- Unlock passwords are sent to qpdf over stdin rather than command-line arguments; protect passwords remain inside the Python/pikepdf process.
+- Client configuration JSON and install-link files are written via same-directory temporary files, fsync, and atomic replacement.
 - Outputs never silently overwrite existing files.
 - Writes can be confined to a workspace via `PDF_TOOLBOX_WORKSPACE`; system directories are always denied.
 - Single-file outputs are staged in a same-directory temporary file and atomically replaced only after success.

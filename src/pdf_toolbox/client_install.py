@@ -11,7 +11,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from .client_setup import DEFAULT_SERVER_NAME, ClientSetup, build_client_setup
+from .client_setup import DEFAULT_SERVER_NAME, ClientSetup, _write_text_atomic, build_client_setup
 
 
 @dataclass(frozen=True)
@@ -66,7 +66,7 @@ def _load_json(path: Path) -> dict:
 
 def _write_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    _write_text_atomic(path, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
 
 def _git_toplevel(start: Path | None = None) -> Path | None:

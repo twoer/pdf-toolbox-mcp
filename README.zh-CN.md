@@ -58,7 +58,7 @@ Python 依赖自动解析。系统工具按**能力分级**——缺了不崩，
 
 | 级别 | 二进制 | 解锁 | macOS | Debian/Ubuntu | Windows |
 |---|---|---|---|---|---|
-| L0 | qpdf | 拆合/旋转/加解密 | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
+| L0 | qpdf | 拆分/合并/旋转/解锁（加密由 pikepdf 提供） | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
 | L1 | poppler | 文本提取/渲染/元信息 | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` 或 conda-forge |
 | L2 | tesseract | **OCR 写回** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
 | L3 | ghostscript | 压缩 | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
@@ -90,7 +90,7 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 
 直击的痛点：
 
-- Claude 原生**直接拒绝加密 PDF**；ChatGPT 对扫描件报 *"No text could be extracted"*——这里 OCR 会把真正的文本层写回文件，`unlock_pdf` 只用 user（打开）密码即可解锁。
+- Claude 原生**直接拒绝加密 PDF**；ChatGPT 对扫描件报 *"No text could be extracted"*——这里 OCR 会把真正的文本层写回文件，`unlock_pdf` 只用 user（打开）密码即可解锁，密码通过 stdin 传给 qpdf，不会出现在进程参数中。
 - Claude Code 按页渲染读 PDF 比本地提取文本**多烧约 30 倍 token**。
 
 ## 工具（25 个）
@@ -106,8 +106,8 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 | `extract_images` | 抽内嵌图片（清单或 PNG 落盘） | pdfimages |
 | `extract_attachments` | 抽内嵌附件文件 | pdfdetach |
 | `list_fonts` | 字体体检：未嵌入字体跨设备可能缺字 | pdffonts |
-| `unlock_pdf` | **user 密码即解锁**，输出解密文件 | qpdf |
-| `protect_pdf` | AES-256 + 细粒度权限（打印/复制/修改…） | qpdf |
+| `unlock_pdf` | **user 密码即解锁**，输出解密文件；密码经 stdin 传递 | qpdf |
+| `protect_pdf` | AES-256 + 细粒度权限（打印/复制/修改…） | pikepdf |
 | `split_pdf` | 按区间或每 N 页拆分 | qpdf |
 | `merge_pdfs` | 按序合并 | qpdf |
 | `rotate_pages` | 选定页 90/180/270 旋转 | qpdf |
@@ -130,6 +130,7 @@ PDF MCP 赛道很挤——但挤的全是**读取**侧。基于[竞品实测调�
 - 单文件输出先写入同目录临时文件，操作成功后才原子替换目标文件。
 - `render_pages`、`extract_images`、`extract_attachments` 等多文件导出先在临时目录生成，全部成功后才发布产物。
 - `overwrite` 默认是 `false`；传入 `overwrite=true`（CLI 使用 `--overwrite`）才会替换已有输出。失败运行不会破坏原有产物。
+- 解锁密码通过 stdin 传给 qpdf，加密密码仅在 Python/pikepdf 进程内处理，不进入命令行参数。
 
 ## 使用示例
 

@@ -10,7 +10,9 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
+import tempfile
 from base64 import b64encode
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -24,6 +26,22 @@ DEFAULT_COMMAND = (
     "git+https://github.com/twoer/pdf-toolbox-mcp",
     "pdf-toolbox-mcp",
 )
+
+
+def _write_text_atomic(path: Path, content: str) -> None:
+    """写客户端配置到同目录临时文件，完成后原子替换。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 @dataclass(frozen=True)
@@ -289,12 +307,12 @@ def export_client_bundle(
         if target.exists() and not overwrite:
             raise FileExistsError(target)
         content = setup.snippet if setup.mode == "json" and setup.snippet else setup.render_text()
-        target.write_text(content, encoding="utf-8")
+        _write_text_atomic(target, content)
         written.append(target)
         if setup.install_link:
             link_file = client_dir / "install-link.txt"
             if link_file.exists() and not overwrite:
                 raise FileExistsError(link_file)
-            link_file.write_text(setup.install_link + "\n", encoding="utf-8")
+            _write_text_atomic(link_file, setup.install_link + "\n")
             written.append(link_file)
     return written

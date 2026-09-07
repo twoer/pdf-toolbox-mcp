@@ -1,4 +1,4 @@
-"""protect / unlock：加密与解锁（qpdf，L0）。
+"""protect / unlock：加密与解锁（pikepdf + qpdf）。
 
 unlock 是差异化刚需（竞品实测 §8.2：三家硬失败、一家过严）——
 本实现与 qpdf 默认一致：user 密码即可解锁，产物为解密文件。
@@ -33,24 +33,32 @@ def protect_pdf(
     权限默认"可打印可复制、不可改"——对外分发的常见形态。
     """
     pdf = assert_readable(ensure_pdf(Path(path)))
-    require("qpdf")
     out = Path(output) if output else pdf.with_name(f"{pdf.stem}_locked.pdf")
     out = _prep_output(out, overwrite)
 
     owner = owner_password if owner_password is not None else user_password
-    args = [
-        str(pdf),
-        "--encrypt", user_password, owner, "256",
-        f"--print={'full' if allow_print else 'none'}",
-        f"--extract={'y' if allow_extract else 'n'}",
-        f"--modify-other={'y' if allow_modify else 'n'}",
-        f"--annotate={'y' if allow_annotate else 'n'}",
-        f"--form={'y' if allow_form else 'n'}",
-        f"--assemble={'y' if allow_assembly else 'n'}",
-        "--",
-        str(out),
-    ]
-    _qpdf_atomic(args, out, overwrite)
+    import pikepdf
+
+    permissions = pikepdf.Permissions(
+        extract=allow_extract,
+        modify_other=allow_modify,
+        modify_annotation=allow_annotate,
+        modify_form=allow_form,
+        modify_assembly=allow_assembly,
+        print_lowres=allow_print,
+        print_highres=allow_print,
+    )
+    with atomic_output(out, overwrite) as tmp, pikepdf.open(pdf) as doc:
+        doc.save(
+            tmp,
+            encryption=pikepdf.Encryption(
+                owner=owner,
+                user=user_password,
+                R=6,
+                aes=True,
+                allow=permissions,
+            ),
+        )
     return {
         "input": str(pdf),
         "output": str(out),
@@ -80,9 +88,10 @@ def unlock_pdf(
 
     try:
         _qpdf_atomic(
-            [f"--password={password}", "--decrypt", str(pdf), "--", str(out)],
+            ["--password-file=-", "--decrypt", str(pdf), "--", str(out)],
             out,
             overwrite,
+            stdin=f"{password}\n",
         )
     except RuntimeError as exc:
         if "password" in str(exc).lower():

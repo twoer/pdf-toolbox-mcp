@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from pdf_toolbox.client_setup import (
     build_client_setup,
     export_client_bundle,
@@ -78,3 +80,17 @@ class TestClientSetup:
         assert (tmp_path / "cursor" / "cursor_mcp.json").exists()
         assert (tmp_path / "cursor" / "install-link.txt").exists()
         assert len(written) == 3
+
+    def test_export_is_atomic_on_replace_failure(self, tmp_path, monkeypatch):
+        target = tmp_path / "claude-desktop" / "claude_desktop_config.json"
+        target.parent.mkdir(parents=True)
+        target.write_text("original", encoding="utf-8")
+
+        def fail_replace(_source, _destination):
+            raise OSError("simulated replace failure")
+
+        monkeypatch.setattr("pdf_toolbox.client_setup.os.replace", fail_replace)
+        with pytest.raises(OSError, match="simulated replace failure"):
+            export_client_bundle(tmp_path, clients=["claude-desktop"], overwrite=True)
+        assert target.read_text(encoding="utf-8") == "original"
+        assert not list(target.parent.glob(".*"))

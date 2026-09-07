@@ -20,9 +20,9 @@ from .sandbox import (
 )
 
 
-def _qpdf(args: list[str]) -> None:
+def _qpdf(args: list[str], stdin: str | None = None) -> None:
     proc = subprocess.run(
-        ["qpdf", *args], capture_output=True, text=True, timeout=300
+        ["qpdf", *args], capture_output=True, text=True, input=stdin, timeout=300
     )
     if proc.returncode != 0:
         raise RuntimeError(f"qpdf 失败: {(proc.stderr or proc.stdout).strip()[:300]}")
@@ -45,10 +45,12 @@ def _prep_output(out: Path, overwrite: bool) -> Path:
     return out
 
 
-def _qpdf_atomic(args: list[str], out: Path, overwrite: bool) -> None:
+def _qpdf_atomic(
+    args: list[str], out: Path, overwrite: bool, stdin: str | None = None
+) -> None:
     """运行 qpdf 到临时文件，成功后原子替换目标。args 最后一项必须是输出路径。"""
     with atomic_output(out, overwrite) as tmp:
-        _qpdf([*args[:-1], str(tmp)])
+        _qpdf([*args[:-1], str(tmp)], stdin=stdin)
 
 
 def split_pdf(

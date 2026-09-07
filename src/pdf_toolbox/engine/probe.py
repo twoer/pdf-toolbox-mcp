@@ -53,7 +53,7 @@ SPEC: dict[str, tuple[int, str, dict[str, str]]] = {
 
 # 二进制安装后可解锁的主要工具（给缺依赖报错 / probe 输出用）
 UNLOCKS: dict[str, tuple[str, ...]] = {
-    "qpdf": ("split_pdf", "merge_pdfs", "rotate_pages", "protect_pdf", "unlock_pdf", "check_repair", "linearize"),
+    "qpdf": ("split_pdf", "merge_pdfs", "rotate_pages", "unlock_pdf", "check_repair", "linearize"),
     "pdfinfo": ("pdf_info", "extract_text", "render_pages", "list_fonts", "is_searchable"),
     "tesseract": ("ocr_pdf", "batch_ocr"),
     "gs": ("compress_pdf",),

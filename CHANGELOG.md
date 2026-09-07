@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+Post-release hardening for the next patch version.
+
+### Security
+- Keep qpdf unlock passwords out of process arguments by sending them through stdin.
+- Keep protect passwords inside the Python/pikepdf process.
+- Write client configuration files atomically to prevent partial JSON or install-link files.
+
+### Performance
+- Collapse highly fragmented `extract_text` page selections into one envelope extraction and local page slicing.
+
 ## [0.1.5] — 2026-09-07
 
 Output-safety hardening release.

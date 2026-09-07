@@ -52,14 +52,26 @@ def extract_text(
 
     total = _page_count(pdf)
     ranges = parse_pages(pages, max_pages=total)
-    # 精确页集合 → 连续区间分组，每区间一次调用（页数多时平衡精度与调用次数）
+    # 精确页集合 → 连续区间分组。区间很多时，合并成一次外包络调用，避免
+    # 千页级稀疏范围触发数百次 pdftotext 进程启动；未请求页随后丢弃。
     unique = flatten_pages(ranges)
     page_map: dict[int, str] = {}
-    for a, b in group_consecutive(unique):
-        out = _pdftotext([*style, "-f", str(a), "-l", str(b), str(pdf), "-"])
-        for i, chunk in enumerate(out.split("\f")):
-            if chunk.strip():
-                page_map[a + i] = chunk.strip()
+    groups = group_consecutive(unique)
+    if len(groups) > 8:
+        envelope = _pdftotext([
+            *style, "-f", str(unique[0]), "-l", str(unique[-1]), str(pdf), "-",
+        ])
+        wanted = set(unique)
+        for i, chunk in enumerate(envelope.split("\f")):
+            page_no = unique[0] + i
+            if page_no in wanted and chunk.strip():
+                page_map[page_no] = chunk.strip()
+    else:
+        for a, b in groups:
+            out = _pdftotext([*style, "-f", str(a), "-l", str(b), str(pdf), "-"])
+            for i, chunk in enumerate(out.split("\f")):
+                if chunk.strip():
+                    page_map[a + i] = chunk.strip()
 
     if per_page:
         return {"path": str(pdf), "per_page": page_map, "total_chars": sum(len(v) for v in page_map.values())}

@@ -12,9 +12,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            install: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf ghostscript tesseract-ocr
+            install: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf ghostscript tesseract-ocr tesseract-ocr-chi-sim
           - os: macos-latest
-            install: brew install poppler qpdf ghostscript tesseract
+            install: brew install poppler qpdf ghostscript tesseract tesseract-lang
           # Windows: choco 预装在 runner 上。tesseract 包较大（~5min），
           # 换来全量 engine 测试在 Windows 真实运行——验证 gswin64c 别名等平台适配。
           - os: windows-latest
@@ -35,3 +35,17 @@ jobs:
         run: uv run pytest -v -m "not realworld"
       - name: Probe report
         run: uv run pdftoolbox probe all
+
+  chinese-language-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install Chinese OCR language pack
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-chi-sim
+      - name: Verify chi_sim is available
+        run: test -n "$(tesseract --list-langs 2>/dev/null | grep -x chi_sim)"
+      - name: Verify language resolution
+        run: uv run python -c "from pdf_toolbox.engine.ocr import resolve_lang; assert resolve_lang('chi_sim+eng') == ('chi_sim+eng', False)"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from pathlib import Path
 
 import pikepdf
 import pytest
@@ -13,6 +14,22 @@ from pdf_toolbox.engine import protect_pdf, unlock_pdf
 
 @requires_qpdf
 class TestProtectUnlock:
+    def test_unlock_does_not_put_password_in_argv(self, encrypted_pdf, tmp_path, monkeypatch):
+        seen = {}
+
+        def fake_qpdf(args, stdin=None):
+            seen["args"] = args
+            seen["stdin"] = stdin
+            Path(args[-1]).write_bytes(b"placeholder")
+
+        monkeypatch.setattr("pdf_toolbox.engine.pages._qpdf", fake_qpdf)
+        monkeypatch.setattr("pdf_toolbox.engine.secure._page_count", lambda _path: 3)
+        result = unlock_pdf(encrypted_pdf, password="secret-password", output=tmp_path / "u.pdf")
+        assert result["pages"] == 3
+        assert "secret-password" not in seen["args"]
+        assert seen["args"][0] == "--password-file=-"
+        assert seen["stdin"] == "secret-password\n"
+
     def test_roundtrip(self, text_pdf, tmp_path):
         locked = protect_pdf(
             text_pdf,

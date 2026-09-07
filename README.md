@@ -58,7 +58,7 @@ Need the full stack in one shot?
 
 | Level | Binary | Unlocks | macOS | Debian/Ubuntu | Windows |
 |---|---|---|---|---|---|
-| L0 | qpdf | split / merge / rotate / protect / unlock | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
+| L0 | qpdf | split / merge / rotate / unlock | `brew install qpdf` | `apt install qpdf` | `choco/scoop install qpdf` |
 | L1 | poppler | extract_text / render / info | `brew install poppler` | `apt install poppler-utils` | `choco/scoop install poppler` or conda-forge |
 | L2 | tesseract | **ocr_pdf (write-back)** | `brew install tesseract tesseract-lang` | `apt install tesseract-ocr tesseract-ocr-chi-sim` | `choco/scoop install tesseract` |
 | L3 | ghostscript | compress | `brew install ghostscript` | `apt install ghostscript` | `scoop install ghostscript` / `winget install ArtifexSoftware.GhostScript` |
@@ -90,7 +90,7 @@ The PDF MCP space is crowded — but only on the *reading* side. Based on a [han
 
 Pain points this addresses directly:
 
-- Claude natively **refuses encrypted PDFs**; ChatGPT reports *"No text could be extracted"* on scans — here, OCR writes a real text layer back into the file, and `unlock_pdf` decrypts with just the user password.
+- Claude natively **refuses encrypted PDFs**; ChatGPT reports *"No text could be extracted"* on scans — here, OCR writes a real text layer back into the file, and `unlock_pdf` decrypts with just the user password (sent to qpdf via stdin, never exposed in process arguments).
 - Claude Code burns **~30× more tokens** reading a PDF page-as-image than extracting text locally.
 
 ## Tools (25)
@@ -106,8 +106,8 @@ Pain points this addresses directly:
 | `extract_images` | Pull embedded images (inventory or PNG files) | pdfimages |
 | `extract_attachments` | Pull embedded attachment files | pdfdetach |
 | `list_fonts` | Font audit — non-embedded fonts risk missing glyphs on other machines | pdffonts |
-| `unlock_pdf` | Decrypt with **user password**, output a clean decrypted file | qpdf |
-| `protect_pdf` | AES-256 + granular permissions (print/extract/modify/…) | qpdf |
+| `unlock_pdf` | Decrypt with **user password**, output a clean decrypted file; password sent via stdin | qpdf |
+| `protect_pdf` | AES-256 + granular permissions (print/extract/modify/…) | pikepdf |
 | `split_pdf` | By ranges or every N pages | qpdf |
 | `merge_pdfs` | Ordered merge | qpdf |
 | `rotate_pages` | 90/180/270 on selected pages | qpdf |
@@ -130,6 +130,7 @@ Pain points this addresses directly:
 - Single-file outputs are written to a same-directory temporary file and atomically replaced only after the operation succeeds.
 - `render_pages`, `extract_images`, and `extract_attachments` stage multi-file exports in a temporary directory and publish them only after all files are ready.
 - `overwrite` defaults to `false`; pass `overwrite=true` (or the CLI `--overwrite`) to replace an existing output. Failed runs leave the previous output untouched.
+- Unlock passwords are passed to qpdf over stdin, and protect passwords stay inside the Python/pikepdf process rather than command-line arguments.
 
 ## Examples
 
