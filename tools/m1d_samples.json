@@ -1,0 +1,58 @@
+[
+  {
+    "file": "m1d_contract_clean.pdf",
+    "kind": "contract",
+    "degradation": "clean 220 dpi",
+    "deskew": false,
+    "markers": ["SYN-LEASE-2026-014", "TEST-ONLY-7734"]
+  },
+  {
+    "file": "m1d_contract_lowres.pdf",
+    "kind": "contract",
+    "degradation": "low resolution",
+    "deskew": false,
+    "markers": ["SYN-LEASE-2026-014"]
+  },
+  {
+    "file": "m1d_invoice_clean.pdf",
+    "kind": "invoice",
+    "degradation": "clean 220 dpi",
+    "deskew": false,
+    "markers": ["INVOICE-SAMPLE-2026-0912"]
+  },
+  {
+    "file": "m1d_invoice_skewed.pdf",
+    "kind": "invoice",
+    "degradation": "2.5 degree skew",
+    "deskew": true,
+    "markers": ["INVOICE-SAMPLE-2026-0912"]
+  },
+  {
+    "file": "m1d_paper_clean.pdf",
+    "kind": "paper",
+    "degradation": "clean 220 dpi",
+    "deskew": false,
+    "markers": ["SYNTHETIC-REPORT-END-2026"]
+  },
+  {
+    "file": "m1d_paper_noisy.pdf",
+    "kind": "paper",
+    "degradation": "synthetic noise",
+    "deskew": false,
+    "markers": ["SYNTHETIC-REPORT-END-2026"]
+  },
+  {
+    "file": "m1d_mixed_clean_noisy.pdf",
+    "kind": "mixed",
+    "degradation": "clean + noisy pages",
+    "deskew": false,
+    "markers": ["SYN-LEASE-2026-014", "INVOICE-SAMPLE-2026-0912"]
+  },
+  {
+    "file": "m1d_mixed_lowres_skew_clean.pdf",
+    "kind": "mixed",
+    "degradation": "lowres + skew + clean pages",
+    "deskew": true,
+    "markers": ["SYNTHETIC-REPORT-END-2026"]
+  }
+]

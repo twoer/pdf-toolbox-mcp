@@ -79,6 +79,22 @@ claude -p "用 pdf-toolbox 工具处理 .fixtures/scanned.pdf：先判断是否�
 
 **结论**：管线质量达标，预演通过；正式 M-1d 仍需 5–10 份真实脱敏样本复核（尤其噪点档表现）。
 
+### 合成样本套件复跑 —— ✅ 2026-09-07
+
+为在没有真实 PDF 的情况下保留可复现基线，新增 `tools/m1d_samples.json` 与
+`tools/eval_m1d_samples.py`。套件包含合同、发票、论文和混合多页样本，覆盖清晰、低分辨率、倾斜、噪点四类输入。
+
+运行命令：
+
+```bash
+uv run python tools/generate_m1d_samples.py --output-dir output/pdf
+TESSDATA_PREFIX=$PWD/.tessdata uv run python tools/eval_m1d_samples.py
+```
+
+本次结果：8/8 文件 OCR 写回成功；关键串精确命中 7/8，去除 OCR 常见空白与标点漂移后命中 8/8；总耗时约 14 秒。低分辨率合同的 `SYN-LEASE-2026-014` 被识别为 `SYNLEASE-2026-014`，因此同时保留 exact 与 normalized 两种指标。
+
+该结果可作为工程回归基线，但仍不等同于真实扫描件质量验收。
+
 ## 结论
 
 M-1b/M-1c 通过，M-1d 合成样本预演完成、正式版因真实样本依赖暂挂。当前主分支已完成输出写入安全加固，普通测试 244 个、realworld 测试 7 个均通过。**M-1d 正式结果不阻塞工程维护，但阻塞 M2 发布。**
