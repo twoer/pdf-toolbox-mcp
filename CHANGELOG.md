@@ -3,9 +3,9 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
-## [Unreleased] — 2026-09-07
+## [0.1.5] — 2026-09-07
 
-Output-safety hardening planned for the 0.1.5 release.
+Output-safety hardening release.
 
 ### Security
 - All single-file PDF writes now use a same-directory temporary file and atomic replace, so a failed conversion cannot leave a partial target.

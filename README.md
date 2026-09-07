@@ -229,7 +229,7 @@ docker run --rm -v "$PWD":/src:ro python:3.12-slim bash -c \
    pip install -q uv && cp -r /src /work && cd /work && uv sync --dev --quiet && uv run pytest -q'
 ```
 
-Roadmap: v0.1.4 ships all 25 tools above; the pending v0.1.5 release hardens output safety and failure isolation. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
+Roadmap: v0.1.4 ships all 25 tools above; v0.1.5 hardens output safety and failure isolation. Explicit non-goals: editing existing text, password cracking — see [PLAN.md](PLAN.md).
 
 ## License
 

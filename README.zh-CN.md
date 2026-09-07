@@ -220,7 +220,7 @@ uv run python tools/onboarding_check.py
 uv run python tools/onboarding_check.py --json
 ```
 
-路线图：v0.1.4 已交付上表全部 25 个工具；待发布的 v0.1.5 将加固输出安全和失败隔离。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
+路线图：v0.1.4 已交付上表全部 25 个工具；v0.1.5 已加固输出安全和失败隔离。明确不做：正文内容编辑、密码破解——见 [PLAN.md](PLAN.md)。
 
 ## 许可证
 
