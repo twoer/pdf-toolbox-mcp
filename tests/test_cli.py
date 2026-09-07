@@ -17,7 +17,7 @@ class TestCliCoverage:
     def test_version_low(self):
         result = runner.invoke(app, ["version"])
         assert result.exit_code == 0
-        assert "0.1.5" in result.stdout
+        assert "0.1.6" in result.stdout
 
     def test_info_medium(self, text_pdf):
         result = runner.invoke(app, ["info", str(text_pdf)])

@@ -3,9 +3,9 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.1.6] — 2026-09-07
 
-Post-release hardening for the next patch version.
+Post-release hardening for secrets handling, configuration writes, and sparse page extraction.
 
 ### Security
 - Keep qpdf unlock passwords out of process arguments by sending them through stdin.
@@ -58,6 +58,7 @@ Release 0.1.3. Local-first PDF processing MCP server (OCRmyPDF + Poppler + qpdf 
 - 50-file batch: 50/50 success, ~1.6 s/file
 
 [Unreleased]: https://github.com/twoer/pdf-toolbox-mcp/commits/main
+[0.1.6]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.6
 [0.1.5]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.5
 [0.1.4]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.4
 [0.1.3]: https://github.com/twoer/pdf-toolbox-mcp/releases/tag/v0.1.3
